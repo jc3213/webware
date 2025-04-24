@@ -49,7 +49,7 @@ function aria2JsonrpcEcho() {
         };
         let timer = setTimeout(() => {
             window.removeEventListener('message', connect);
-            reject( new Error( '"Download With Aria2" has not been installed!' ) );
+            reject( new Error( '"Download With Aria2" is either not installed, disabled, or outdated (must be v4.15.4.3360 or higher).' ) );
         }, 5000);
         window.addEventListener('message', connect);
         window.postMessage({ aria2c: 'aria2c_jsonrpc_echo' });
