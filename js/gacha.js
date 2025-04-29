@@ -14,6 +14,7 @@ class Gacha {
         up: []
     }
     #max = 200;
+    #cur = 0;
     set max (number) {
         this.#rarity.max = isNaN(number) || number < 1 ? 1 :number > 200 ? 200 : number;
     }
@@ -28,7 +29,7 @@ class Gacha {
         return this.#rarity;
     }
     reset () {
-        this.#rarity.cur = 0;
+        this.#cur = 0;
         this.cards = { up: [], ssr: [], sr: [], r: [] };
     }
     pool (type, number) {
@@ -45,7 +46,7 @@ class Gacha {
     }
     roll (number) {
         if (!Number.isInteger(number) || number < 1) { throw new Error('parameter 1 "' + number + '" is invalid; must be a positive number larger than 0.'); }
-        if (this.#rarity.cur === this.#rarity.max) {
+        if (this.#cur === this.#rarity.max) {
             return;
         }
         for (let i = 0; i < number; i ++) {
@@ -59,7 +60,7 @@ class Gacha {
             } else {
                 this.card('r');
             }
-            if (++ this.#rarity.cur === this.#rarity.max) {
+            if (++ this.#cur === this.#rarity.max) {
                 this.result();
                 break;
             }
