@@ -19,7 +19,7 @@ function biliReplyEmojis(host) {
         let {alt, src} = img;
         if (regexp.test(alt)) {
             let url = src.slice(0, src.indexOf('@'));
-            let name = alt.slice(1, -1) + '.png';
+            let name = alt.slice(1, -1) + url.slice(url.lastIndexOf('.'));
             result.set(name, url);
         }
     });
