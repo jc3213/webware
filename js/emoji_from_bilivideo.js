@@ -1,4 +1,6 @@
+let keyword = ['Ave Mujica', 'Mygo表情包', '颂乐人偶'];
 let result = new Map();
+let regexp = new RegExp(keyword.join('|'), 'i');
 
 [...document.getElementById('commentapp').children[0].shadowRoot.children[1].children[1].children].forEach((host) => {
     let [post, reply] = host.shadowRoot.children;
@@ -10,17 +12,12 @@ let result = new Map();
         let reply = host.shadowRoot.children[0].children[0].children[1].shadowRoot;
         biliReplyEmojis(reply);
     });
-    return
-    if (reply.length === 2) {
-        reply = reply[0].shadowRoot.children[0].children[0].children[1].shadowRoot;
-        console.log(reply);
-    }
 });
 
 function biliReplyEmojis(host) {
     host?.querySelectorAll('img')?.forEach((img) => {
         let {alt, src} = img;
-        if (alt.includes('Ave Mujica_') || alt.includes('Mygo表情包_') || alt.includes('颂乐人偶_')) {
+        if (regexp.test(alt)) {
             let url = src.slice(0, src.indexOf('@'));
             let name = alt.slice(1, -1) + '.png';
             result.set(name, url);
