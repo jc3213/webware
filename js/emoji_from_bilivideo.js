@@ -26,3 +26,6 @@ function biliReplyEmojis(host) {
 }
 
 console.log(result);
+
+let params = [...result].map(( [out, url] ) => ( {url, options: {out} ) );
+window.postMessage( {aria2c: 'aria2c_jsonrpc_call', params} );
