@@ -15,8 +15,11 @@ class Gacha {
         return { rolls: this.#cur, cards: this.#cards };
     }
     #max = 200;
-    set max(number) {
-        this.#max = isNaN(number) || number < 1 ? 1 : number > 200 ? 200 : number;
+    set max(value) {
+        if (Number.isFinite(value) && value % 10 !== 0) {
+            throw new Error(`parameter 1 "${value}" must be a multiple of 10 or Infinity`);
+        }
+        this.#max = value;
     }
     get max() {
         return this.#max;
