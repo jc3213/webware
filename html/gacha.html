@@ -61,13 +61,18 @@
             <option value="100">100 Rolls</option>
             <option value="200">200 Rolls</option>
         </select>
+        <select id="">
+            <option value="200" selected>200 Rolls</option>
+            <option value="300">300 Rolls</option>
+            <option value="Infinity">∞ Rolls</option>
+        </select>
         <button id="reset">Reset</button>
     </div>
     <div id="result"></div>
     <script src="https://jc3213.github.io/webware/js/gacha.js"></script>
     <script>
         let [pools, menu, result] = document.body.children;
-        let [start, select, reset] = menu.children;
+        let [start, select, rolls, reset] = menu.children;
         let text = result.innerText;
         let gacha = new Gacha();
 
@@ -86,6 +91,11 @@
             let rolls = select.value | 0;
             gacha.roll(rolls);
             result.innerText = gachaResult(gacha.cards);
+        });
+
+        rolls.addEventListener('change', () => {
+            let {value} = rolls;
+            gacha.max = value === "Infinity" ? Infinity : parseInt(value);
         });
 
         reset.addEventListener('click', () => {
