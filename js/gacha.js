@@ -12,14 +12,7 @@ class Gacha {
     }
     #cards = new Map();
     get cards() {
-        if (this.#cards.size === 0) {
-            return "There's no card!";
-        }
-        let result = `Gatcha at ${this.#cur} rolls:\n`;
-        this.#cards.forEach((cards, type) => {
-            result += `"${type.toUpperCase()}" (${cards.length}):\n${cards.join(', ')}\n`;
-        });
-        return result;
+        return { rolls: this.#cur, cards: this.#cards };
     }
     #max = 200;
     set max(number) {
@@ -46,14 +39,9 @@ class Gacha {
         this.#rarity.set(type, rare);
     }
     get pools() {
-        if (this.#pools.size === 0) {
-            return "The gacha pool is empty!";
-        }
-        let result = `Gacha Pools:\n`;
-        this.#pools.forEach((map, type) => {
-            let pool = [...map.values()].join(', ');
-            let rare = this.#rarity.get(type) * 100 | 0;
-            result += `"${type.toUpperCase()}" (${rare}%):\n${pool}\n`;
+        let result = [...this.#pools].map((pool, type) => {
+            let rarity = this.#rarity.get(type);
+            return {type, rarity, pool};
         });
         return result;
     }
@@ -66,7 +54,7 @@ class Gacha {
         let card = this.#cards.get(type) ??[];
         card.push(pick);
         this.#cards.set(type, card);
-        //console.log(`Got ${type.toUpperCase()} card: ${pick}`);
+        console.log(`Got ${type.toUpperCase()} card: ${pick}`);
     }
     roll (value) {
         if (!Number.isInteger(value) || value < 1) {
@@ -94,7 +82,7 @@ class Gacha {
             } else {
                 this.#pick('r');
             }
-            if (this.#cur === this.#max) {
+            if (this.#cur >= this.#max) {
                 break;
             }
         }
