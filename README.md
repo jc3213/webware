@@ -8,6 +8,6 @@
 - [Aria2 Task Manager](//jc3213.github.io/aria2.js/manager)
 - [Messaging Sample - Download with Aria2](//jc3213.github.io/webware/html/test.html)
 
-## Test
+## Gears and Toys
 - [Gacha Simulator](https://jc3213.github.io/webware/html/gacha.html)
     - [gacha.js](https://jc3213.github.io/webware/js/gacha.js)
