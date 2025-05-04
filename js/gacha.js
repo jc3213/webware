@@ -1,9 +1,6 @@
 class Gacha {
-    constructor() {
-    }
     version = '0.1';
     #cur = 0;
-    #line = '==========================================================================\n';
     reset () {
         this.#cur = 0;
         this.#cards.clear();
@@ -18,7 +15,7 @@ class Gacha {
         if (this.#cards.size === 0) {
             return "There's no card!";
         }
-        let result = `Gatcha at ${this.#cur} rolls:\n${this.#line}`;
+        let result = `Gatcha at ${this.#cur} rolls:\n`;
         this.#cards.forEach((cards, type) => {
             result += `"${type.toUpperCase()}" (${cards.length}):\n${cards.join(', ')}\n`;
         });
@@ -52,7 +49,7 @@ class Gacha {
         if (this.#pools.size === 0) {
             return "The gacha pool is empty!";
         }
-        let result = `Gacha Pools\n${this.#line}`;
+        let result = `Gacha Pools:\n`;
         this.#pools.forEach((map, type) => {
             let pool = [...map.values()].join(', ');
             let rare = this.#rarity.get(type) * 100 | 0;
@@ -88,7 +85,6 @@ class Gacha {
             let random = Math.random();
             if (random < up) {
                 this.#pick('up');
-                break;
             } else if (random < ur) {
                 this.#pick('ur');
             } else if (random < ssr) {
