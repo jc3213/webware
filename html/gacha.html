@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gacha Simulation</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            text-align: center;
+        }
+        select, button {
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #result {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 720px;
+            min-height: 300px;
+            white-space: wrap;
+        }
+        #result:empty::after {
+            content: "Select rolls and press \"Start\"";
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <button id="start">Start</button>
+        <select id="rolls">
+            <option value="10">10 Rolls</option>
+            <option value="50">50 Rolls</option>
+            <option value="100">100 Rolls</option>
+            <option value="200" selected>200 Rolls</option>
+        </select>
+        <button id="reset">Reset</button>
+    </div>
+    <div id="result"></div>
+    <script src="https://jc3213.github.io/webware/js/gacha.js"></script>
+    <script>
+        let [menu, result] = document.body.children;
+        let [start, select, reset] = menu.children;
+        let text = result.innerText;
+        let gacha = new Gacha();
+
+        gacha.pool('r', 0.3, Array.from({ length: 30 }, (_, i) => `r${i + 1}`));
+        gacha.pool('sr', 0.12, Array.from({ length: 20 }, (_, i) => `sr${i + 1}`));
+        gacha.pool('ssr', 0.07, Array.from({ length: 10 }, (_, i) => `ssr${i + 1}`));
+        gacha.pool('up', 0.03, ['up1']);                                       
+
+        start.addEventListener('click', () => {
+            let rolls = select.value | 0;
+            gacha.roll(rolls);
+            result.innerText = gacha.cards;
+        });
+
+        reset.addEventListener('click', () => {
+            gacha.reset();
+            result.innerText = '';
+        });
+    </script>
+</body>
+</html>
