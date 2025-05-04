@@ -1,86 +1,106 @@
 class Gacha {
     constructor() {
-        this.reset();
     }
-    #rarity = {
-        up: 0.014,
-        sr: 0.3,
-        ssr: 0.03
-    };
-    #pools = {
-        r: [],
-        sr: [],
-        ssr: [],
-        up: []
-    }
-    #max = 200;
+    version = '0.1';
     #cur = 0;
-    set max (number) {
-        this.#rarity.max = isNaN(number) || number < 1 ? 1 :number > 200 ? 200 : number;
-    }
-    get max () {
-        return this.#rarity.max;
-    }
-    set rarity (rarity) {
-        if (!rarity.up || !rarity.sr || !rarity.ssr) { throw new Error('parameter 1 "' + JSON.stringify(rarity) + '" is invalid; must be an object of {up: float, ssr: float, sr: flost}.'); }
-        this.#rarity = rarity;
-    }
-    get rarity () {
-        return this.#rarity;
-    }
+    #line = '==========================================================================\n';
     reset () {
         this.#cur = 0;
-        this.cards = { up: [], ssr: [], sr: [], r: [] };
+        this.#cards.clear();
     }
-    pool (type, number) {
-        let pool = this.#pools[type];
-        if (!pool) { throw new Error('parameter 1 "' + type + '" is invalid; must be "r", "sr", "ssr", or "up".'); };
-        if (!Number.isInteger(number) || number < 1) { throw new Error('parameter 2 "' + number + '" is invalid; must be a positive number larger than 0.'); }
-        Array.from({ length: number }, (_, i) => pool.push(type + i));
+    empty () {
+        this.reset();
+        this.#rarity.clear();
+        this.#pools.clear();
     }
-    card (type) {
-        let pool = this.#pools[type];
-        let card = pool[Math.floor(Math.random() * pool.length)];
-        this.cards[type].push(card);
-        console.log('Got "' + type.toUpperCase() + '" card: ' + card);
+    #cards = new Map();
+    get cards() {
+        if (this.#cards.size === 0) {
+            return "There's no card!";
+        }
+        let result = `Gatcha at ${this.#cur} rolls:\n${this.#line}`;
+        this.#cards.forEach((cards, type) => {
+            result += `"${type.toUpperCase()}" (${cards.length}):\n${cards.join(', ')}\n`;
+        });
+        return result;
     }
-    roll (number) {
-        if (!Number.isInteger(number) || number < 1) { throw new Error('parameter 1 "' + number + '" is invalid; must be a positive number larger than 0.'); }
-        if (this.#cur === this.#rarity.max) {
+    #max = 200;
+    set max(number) {
+        this.#max = isNaN(number) || number < 1 ? 1 : number > 200 ? 200 : number;
+    }
+    get max() {
+        return this.#max;
+    }
+    #pools = new Map();
+    #rarity = new Map();
+    pool (type, rare, args) {
+        if (!/^(up|ur|ssr|sr|r)$/.test(type)) {
+            throw new Error(`parameter 1 "${type}" must be one of r, sr, ssr, ur, up`);
+        }
+        if (!/^0\.([0-4]\d*|5)$/.test(rare)) {
+            throw new Error(`parameter 2: "${value}" must be a float number less than 0.5`);
+        }
+        if (!Array.isArray(args) || args.length === 0) {
+            throw new Error(`parameter 3 "${args}" must be a non-empty 'Array'`);
+        }
+        let pool = new Map();
+        args.forEach((e, i) => pool.set(i, e));
+        this.#pools.set(type, pool);
+        this.#rarity.set(type, rare);
+    }
+    get pools() {
+        if (this.#pools.size === 0) {
+            return "The gacha pool is empty!";
+        }
+        let result = `Gacha Pools\n${this.#line}`;
+        this.#pools.forEach((map, type) => {
+            let pool = [...map.values()].join(', ');
+            let rare = this.#rarity.get(type) * 100 | 0;
+            result += `"${type.toUpperCase()}" (${rare}%):\n${pool}\n`;
+        });
+        return result;
+    }
+    #pick (type) {
+        let pool = this.#pools.get(type);
+        if (!pool || pool.size === 0) {
+            throw new Error(`Gacha pool "${type.toUpperCase()}" is empty!`);
+        }
+        let pick = pool.get(Math.floor(Math.random() * pool.size));
+        let card = this.#cards.get(type) ??[];
+        card.push(pick);
+        this.#cards.set(type, card);
+        //console.log(`Got ${type.toUpperCase()} card: ${pick}`);
+    }
+    roll (value) {
+        if (!Number.isInteger(value) || value < 1) {
+            throw new Error(`parameter 1 "${value}" must be a positive number larger than 0`);
+        }
+        if (this.#cur >= this.#max) {
             return;
         }
-        for (let i = 0; i < number; i ++) {
+        let up = this.#rarity.get('up') ?? 0;
+        let ur = this.#rarity.get('ur') ?? 0;
+        let ssr = this.#rarity.get('ssr') ?? 0;
+        let sr = this.#rarity.get('sr') ?? 0;
+        let r = this.#rarity.get('r') ?? 1;
+        for (let i = 0; i < value; i++) {
+            this.#cur++;
             let random = Math.random();
-            if (random < this.#rarity.up) {
-                this.card('up');
-            } else if (random < this.#rarity.ssr) {
-                this.card('ssr');
-            } else if (random < this.#rarity.sr) {
-                this.card('sr');
+            if (random < up) {
+                this.#pick('up');
+                break;
+            } else if (random < ur) {
+                this.#pick('ur');
+            } else if (random < ssr) {
+                this.#pick('ssr');
+            } else if (random < sr) {
+                this.#pick('sr');
             } else {
-                this.card('r');
+                this.#pick('r');
             }
-            if (++ this.#cur === this.#rarity.max) {
-                this.result();
+            if (this.#cur === this.#max) {
                 break;
             }
         }
     }
-    result() {
-        let { up, ssr, sr, r } = this.cards;
-        console.log('Gacha max at "' + this.#rarity.max + '" rolls;\n' +
-            'Got ' + up.length + ' pickup cards: "'+ up.join(', ') + '";\n' +
-            'Got ' + r.length + ' R cards: "' + r.join(', ') + '";\n' +
-            'Got ' + sr.length + ' SR cards: "' + sr.join(', ') + '";\n' +
-            'Got ' + ssr.length + ' SSR cards: "' + ssr.join(', ') + '";');
-    }
 }
-
-/* Run test
-let a = new Gacha();
-a.pool('r', 80);
-a.pool('sr', 30);
-a.pool('ssr', 10);
-a.pool('up', 1);
-a.roll(200);
-*/
