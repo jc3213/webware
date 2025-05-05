@@ -69,7 +69,7 @@
         <button id="reset">Reset</button>
     </div>
     <div id="result"></div>
-    <script src="https://jc3213.github.io/webware/js/gacha.js"></script>
+    <script src="gacha.js"></script>
     <script>
         let [pools, menu, result] = document.body.children;
         let [start, select, rolls, reset] = menu.children;
@@ -90,7 +90,7 @@
         start.addEventListener('click', () => {
             let rolls = select.value | 0;
             gacha.roll(rolls);
-            result.innerText = gachaResult(gacha.cards);
+            result.innerHTML = gachaResult(gacha.cards);
         });
 
         rolls.addEventListener('change', () => {
@@ -100,16 +100,23 @@
 
         reset.addEventListener('click', () => {
             gacha.reset();
-            result.innerText = '';
+            result.innerHTML = '';
         });
 
         function gachaResult({rolls, cards}) {
             if (cards.size === 0) {
                 return "There's no card!";
             }
-            let result = `Gatcha at ${rolls} rolls:\n`;
+            let result = `<p>Gatcha at ${rolls} rolls:</p>`;
             cards.forEach((cards, type) => {
-                result += `"${type.toUpperCase()}" (${cards.length}):\n${cards.join(', ')}\n`;
+                let title = `<p>"${type.toUpperCase()}"`;
+                let body = '';
+                let all = 0;
+                cards.forEach((tick, card) => {
+                    body += `${card}: ${tick}; `;
+                    all ++;
+                });
+                result += `${title} (${all}) [${(all / rolls * 10000 | 0) / 100}%]:</p>${body}`;
             });
             return result;
         }
