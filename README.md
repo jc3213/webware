@@ -1,5 +1,6 @@
 ## Applications
-- [Aria2 Task Manager](//jc3213.github.io/aria2.js/manager)
+- [Download with Aria2](https://github.com/jc3213/download_with_aria2)
+    - [Aria2 Task Manager](//jc3213.github.io/aria2.js/manager)
     - [aria2.js - aria2 JSON-RPC ultility](//github.com/jc3213/aria2.js)
     - [Messaging Sample - Download with Aria2](//jc3213.github.io/webware/html/test.html)
 - [Easy Proxy](https://github.com/jc3213/easy_proxy)
