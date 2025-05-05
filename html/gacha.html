@@ -114,7 +114,7 @@
                 let all = 0;
                 cards.forEach((tick, card) => {
                     body += `${card}: ${tick}; `;
-                    all ++;
+                    all += tick;
                 });
                 result += `${title} (${all}) [${(all / rolls * 10000 | 0) / 100}%]:</p>${body}`;
             });
