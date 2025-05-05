@@ -54,8 +54,9 @@ class Gacha {
             throw new Error(`Gacha pool "${type.toUpperCase()}" is empty!`);
         }
         let pick = pool.get(Math.floor(Math.random() * pool.size));
-        let card = this.#cards.get(type) ??[];
-        card.push(pick);
+        let card = this.#cards.get(type) ?? new Map();
+        let tick = (card.get(pick) ?? 0) + 1;
+        card.set(pick, tick);
         this.#cards.set(type, card);
         console.log(`Got ${type.toUpperCase()} card: ${pick}`);
     }
