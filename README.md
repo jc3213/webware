@@ -8,7 +8,7 @@
 
 ## JavaScript Libraries
 - [promisefilereader.js - Promise based FileReader wrapper](//jc3213.github.io/promisefilereader.js/)
-- [metalink.js - matalink generater](//github.com/jc3213/metalink.js)
+- [metalink.js - matalink generater](//jc3213.github.io/metalink.js/)
 
 ## Gears and Toys
 - [Gacha Simulator](https://jc3213.github.io/webware/html/gacha.html)
