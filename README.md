@@ -9,6 +9,7 @@
 ## JavaScript Libraries
 - [promisefilereader.js - Promise based FileReader wrapper](//jc3213.github.io/promisefilereader.js/)
 - [metalink.js - matalink generater](//jc3213.github.io/metalink.js/)
+- [storage.js - Promise based indexedDB wrapper](//jc3213.github.io/storage.js/)
 
 ## Gears and Toys
 - [Gacha Simulator](https://jc3213.github.io/webware/html/gacha.html)
