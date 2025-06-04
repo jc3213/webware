@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Messaging Sample - Download with Aria2</title>
-    <link rel="stylesheet" href="chromium/pages/common.css">
+    <link rel="stylesheet" href="https://jc3213.github.io/download_with_aria2/chromium/pages/common.css">
     <style>
 body {
     display: flex;
@@ -35,24 +35,25 @@ textarea {
     <button>Run</button>
     <textarea disabled></textarea>
     <script>
-let [testBtn, testResult] = document.body.children;
+let [ testBtn, testResult ] = document.body.children;
+let channel;
 
 function aria2JsonrpcEcho() {
     return new Promise((resolve, reject) => {
-        let connect = (event) => {
+        channel = new BroadcastChannel('DownloadWithAria2');
+        channel.onmessage = (event) => {
             let { aria2c, name, version } = event.data;
-            if (aria2c === 'aria2c_response_echo') {
+            if (aria2c === "aria2c_response_echo") {
                 clearTimeout(timer);
-                window.removeEventListener('message', connect);
-                resolve( { name, version } );
+                resolve({ name, version });
             }
         };
         let timer = setTimeout(() => {
-            window.removeEventListener('message', connect);
-            reject( new Error( '"Download With Aria2" is either not installed, disabled, or outdated (must be v4.15.4.3371 or higher).' ) );
+            channel.close();
+            channel = null;
+            reject( new Error( '"Download With Aria2" is either not installed, disabled, or outdated (must be v4.16.2.3422 or higher).' ) );
         }, 5000);
-        window.addEventListener('message', connect);
-        window.postMessage({ aria2c: 'aria2c_jsonrpc_echo' });
+        channel.postMessage({ aria2c: "aria2c_jsonrpc_echo" });
     });
 }
 
