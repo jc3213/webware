@@ -88,7 +88,7 @@ function aria2Echo() {
 function startTest() {
     testResult.value = 'Evaluating if "Download With Aria2" is within v4.15.4.3371 to v4.16.4.3450';
     aria2Echo().then(onSuccess).catch((err) => {
-        testResult.value = 'Wait 3 seconds to start evaluating if "Download With Aria2" is higher than v4.16.4.3450'';
+        testResult.value = 'Failed...\nWait 3 seconds to start evaluating if "Download With Aria2" is higher than v4.16.4.3450'';
         setTimeout(() => aria2Call('aria2c_manifest').then(onSuccess).catch(onFailure), 3000);
     });
 }
