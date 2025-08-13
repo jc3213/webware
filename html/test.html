@@ -79,7 +79,7 @@ function aria2Echo() {
         let timer = setTimeout(() => {
             window.removeEventListener('message', connect);
             reject( new Error('"Download With Aria2" is either not installed, disabled, or outdated (must be v4.15.4.3371 or higher).') );
-        }, 5000);
+        }, 3000);
         window.addEventListener('message', connect);
         window.postMessage({ aria2c: 'aria2c_jsonrpc_echo' });
     });
@@ -88,8 +88,8 @@ function aria2Echo() {
 function startTest() {
     testResult.value = 'Evaluating if "Download With Aria2" is within v4.15.4.3371 to v4.16.4.3450';
     aria2Echo().then(onSuccess).catch((err) => {
-        testResult.value = 'Evaluating if "Download With Aria2" is higher than v4.16.4.3450';
-        aria2Call('aria2c_manifest').then(onSuccess).catch(onFailure);
+        testResult.value = 'Wait 3 seconds to start evaluating if "Download With Aria2" is higher than v4.16.4.3450'';
+        setTimeout(() => aria2Call('aria2c_manifest').then(onSuccess).catch(onFailure), 3000);
     });
 }
 
