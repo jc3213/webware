@@ -36,14 +36,18 @@ textarea {
     <textarea disabled></textarea>
     <script>
 (() => {
+    if (window.aria2Bridge) {
+        return;
+    }
+
     const callMap = new Map();
 
-    window.aria2Call = function (aria2c, params) {
+    const callback = (aria2c, params) => {
         return new Promise((resolve, reject) => {
             let id = crypto.randomUUID();
             let timer = setTimeout(() => {
                 callMap.delete(id);
-                reject( new Error('"Download With Aria2" is either not installed, disabled, or outdated (must be higher than v4.16.4.3450).') );
+                reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.16.4.3450.') );
             }, 3000);
             callMap.set(id, (result) => {
                 clearTimeout(timer);
@@ -54,47 +58,51 @@ textarea {
         });
     };
 
-    const handler = {
-        'aria2c_response': (id, result) => callMap.get(id)(result)
+    const dispatch = {
+        'aria2c_response': (result, id) => callMap.get(id)(result),
+        'aria2c_response_echo': (result) => callMap.get('echo')(result) // support old version
     };
 
     window.addEventListener('message', (event) => {
-        let { aria2c, id, result } = event.data
-        handler[aria2c]?.(id, result);
+        let { aria2c, id, result } = event.data;
+        dispatch[aria2c]?.(result, id);
     });
+
+    window.aria2Bridge = {
+        status: () => callback('aria2c_status'),
+        download: (params) => callback('aria2c_download', params)
+    };
+
+    // support old version
+    window.aria2Echo = () => {
+        return new Promise((resolve, reject) => {
+            let timer = setTimeout(() => {
+                callMap.delete('echo');
+                reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.15.4.3371。') );
+            }, 3000);
+            callMap.set('echo', (result) => {
+                clearTimeout(timer);
+                callMap.delete('echo');
+                resolve(result);
+            });
+            window.postMessage({ aria2c: 'aria2c_jsonrpc_echo' });
+        });
+    };
 })();
 
 let [testBtn, testResult] = document.body.children;
-
-function aria2Echo() {
-    return new Promise((resolve, reject) => {
-        let connect = (event) => {
-            let { aria2c, name, version } = event.data;
-            if (aria2c === 'aria2c_response_echo') {
-                clearTimeout(timer);
-                window.removeEventListener('message', connect);
-                resolve( { name, version } );
-            }
-        };
-        let timer = setTimeout(() => {
-            window.removeEventListener('message', connect);
-            reject( new Error('"Download With Aria2" is either not installed, disabled, or outdated (must be v4.15.4.3371 or higher).') );
-        }, 3000);
-        window.addEventListener('message', connect);
-        window.postMessage({ aria2c: 'aria2c_jsonrpc_echo' });
-    });
-}
 
 function startTest() {
     testResult.value = 'Evaluating if "Download With Aria2" is within v4.15.4.3371 to v4.16.4.3450';
     aria2Echo().then(onSuccess).catch((err) => {
         testResult.value = 'Evaluating if "Download With Aria2" is higher than v4.16.4.3450';
-        setTimeout(() => aria2Call('aria2c_status').then((res) => onSuccess(res.manifest)).catch(onFailure), 3000);
+        setTimeout(() => aria2Bridge.status().then((res) => onSuccess(res.manifest)).catch(onFailure), 3000);
     });
 }
 
-function onSuccess({ name, version }) {
-    testResult.value = 'Extension Name: ' +name + '\nVersion: ' + version;
+function onSuccess(result) {
+    let { name, version } = result.manifest;
+    testResult.value = 'Extension Name: ' + name + '\nVersion: ' + version;
 }
 
 function onFailure(error) {
