@@ -47,7 +47,7 @@ textarea {
             let id = crypto.randomUUID();
             let timer = setTimeout(() => {
                 callMap.delete(id);
-                reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.16.4.3450.') );
+                reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.17.0.3548.') );
             }, 3000);
             callMap.set(id, (result) => {
                 clearTimeout(timer);
