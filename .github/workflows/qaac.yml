@@ -1,5 +1,4 @@
-name: Build qaac portable and singleton
-
+name: qaac_portable
 on:
   workflow_dispatch:
 
@@ -20,20 +19,6 @@ jobs:
       with:
         node-version: 18
 
-    - name: Install generate-evb
-      run: npm install generate-evb
-
-    - name: Get latest Enigma Virtual Box release
-      run: |
-        curl -s https://api.github.com/repos/dirkarnez/enigma-virtual-box-portable/releases/latest \
-        | grep "browser_download_url" \
-        | grep "enigma-virtual-box-portable-v.*\.zip" \
-        | cut -d '"' -f 4 \
-        | xargs curl -L -o enigmavb.zip
-
-    - name: Extract Enigma Virtual Box
-      run: 7z x enigmavb.zip -oenigmavb
-
     - name: Download latest qaac release
       run: |
         QAAC_URL=$(curl -s https://api.github.com/repos/nu774/qaac/releases/latest \
@@ -47,9 +32,10 @@ jobs:
     - name: Extract qaac and prepare folders
       run: |
         7z x qaac.zip
-        mkdir -p win32 win64
-        cp qaac_*/x86/* win32/
-        cp qaac_*/x64/* win64/
+        mkdir -p qaac_portable-${QAAC_VERSION}/win32
+        mkdir -p qaac_portable-${QAAC_VERSION}/win64
+        cp qaac_*/x86/* qaac_portable-${QAAC_VERSION}/win32/
+        cp qaac_*/x64/* qaac_portable-${QAAC_VERSION}/win64/
 
     - name: Download iTunes installers
       run: |
@@ -78,47 +64,15 @@ jobs:
       run: |
         DLLS=("ASL.dll" "CoreAudioToolbox.dll" "CoreFoundation.dll" "libdispatch.dll" "libicuin.dll" "libicuuc.dll" "objc.dll")
         for dll in "${DLLS[@]}"; do
-          find itunes32_dll -iname "$dll" -exec cp {} win32/ \;
-          find itunes64_dll -iname "$dll" -exec cp {} win64/ \;
+          find itunes32_dll -iname "$dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win32/ \;
+          find itunes64_dll -iname "$dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win64/ \;
         done
 
-        find itunes32_dll -iname "icudt*.dll" -exec cp {} win32/ \;
-        find itunes64_dll -iname "icudt*.dll" -exec cp {} win64/ \;
+        find itunes32_dll -iname "icudt*.dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win32/ \;
+        find itunes64_dll -iname "icudt*.dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win64/ \;
 
-    - name: Generate .evb project files
-      run: node ./js/generate-evb.js
-
-    - name: Run Enigma Virtual Box Console
-      shell: cmd
-      run: |
-        enigmavb\EnigmaVBConsole.exe build\qaac-win32-%QAAC_VERSION%.evb
-        enigmavb\EnigmaVBConsole.exe build\qaac-win64-%QAAC_VERSION%.evb
-
-    - name: Package zip bundles
-      run: |
-        7z a -mx=9 qaac-win32-${QAAC_VERSION}.zip ./win32/*
-        7z a -mx=9 qaac-win64-${QAAC_VERSION}.zip ./win64/*
-
-    - name: Upload win32 zip
+    - name: Upload portable bundle
       uses: actions/upload-artifact@v4
       with:
-        name: qaac-win32-${{ env.QAAC_VERSION }}
-        path: qaac-win32-${{ env.QAAC_VERSION }}.zip
-
-    - name: Upload win64 zip
-      uses: actions/upload-artifact@v4
-      with:
-        name: qaac-win64-${{ env.QAAC_VERSION }}
-        path: qaac-win64-${{ env.QAAC_VERSION }}.zip
-
-    - name: Upload singleton win32 EXE
-      uses: actions/upload-artifact@v4
-      with:
-        name: qaac-singleton-win32-${{ env.QAAC_VERSION }}
-        path: qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe
-
-    - name: Upload singleton win64 EXE
-      uses: actions/upload-artifact@v4
-      with:
-        name: qaac-singleton-win64-${{ env.QAAC_VERSION }}
-        path: qaac-singleton-win64-${{ env.QAAC_VERSION }}.exe
+        name: qaac-portable-${{ env.QAAC_VERSION }}
+        path: qaac_portable-${{ env.QAAC_VERSION }}
