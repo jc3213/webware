@@ -105,11 +105,11 @@ jobs:
           echo "</VirtualBox>"
         } > config64.xml
 
-    - name: Run Enigma Virtual Box (cmd)
+    - name: Run Enigma Virtual Box GUI version via cmd
       shell: cmd
       run: |
-        enigmavb\EnigmaVBConsole.exe config32.xml
-        enigmavb\EnigmaVBConsole.exe config64.xml
+        enigmavb\EnigmaVB.exe config32.xml
+        enigmavb\EnigmaVB.exe config64.xml
 
     - name: Package zip bundles
       run: |
