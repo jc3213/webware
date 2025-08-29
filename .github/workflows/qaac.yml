@@ -1,0 +1,111 @@
+name: Build qaac portable and singleton
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Install tools
+      run: |
+        choco install -y 7zip innoextract enigmavirtualbox
+
+    - name: Download latest qaac release
+      run: |
+        curl -sL https://api.github.com/repos/nu774/qaac/releases/latest > latest.json
+        $url = (Get-Content latest.json | ConvertFrom-Json).assets | Where-Object { $_.name -like "qaac_*.zip" } | Select-Object -First 1 | Select-Object -ExpandProperty browser_download_url
+        $version = $url -replace ".*/qaac_(.*)\.zip", '$1'
+        echo "QAAC_VERSION=$version" >> $env:GITHUB_ENV
+        curl -L -o qaac.zip $url
+
+    - name: Extract qaac
+      run: |
+        7z x qaac.zip -oqaac
+        mkdir win32 win64
+        copy qaac\x86\* win32\
+        copy qaac\x64\* win64\
+
+    - name: Download iTunes installers
+      run: |
+        curl -L -o iTunes32.exe https://www.apple.com/itunes/download/win32
+        curl -L -o iTunes64.exe https://www.apple.com/itunes/download/win64
+
+    - name: Extract DLLs
+      run: |
+        mkdir itunes32 itunes64
+        innoextract -d itunes32 iTunes32.exe
+        innoextract -d itunes64 iTunes64.exe
+
+        $dlls = @(
+          "ASL.dll", "CoreAudioToolbox.dll", "CoreFoundation.dll",
+          "libdispatch.dll", "libicuin.dll", "libicuuc.dll", "objc.dll"
+        )
+
+        Get-ChildItem -Recurse itunes32 | Where-Object { $_.Name -match "icudt.*\.dll" -or $dlls -contains $_.Name } | Copy-Item -Destination win32 -Force
+        Get-ChildItem -Recurse itunes64 | Where-Object { $_.Name -match "icudt.*\.dll" -or $dlls -contains $_.Name } | Copy-Item -Destination win64 -Force
+
+    - name: Package zip bundles
+      run: |
+        Compress-Archive -Path win32\* -DestinationPath qaac-win32-${{ env.QAAC_VERSION }}.zip
+        Compress-Archive -Path win64\* -DestinationPath qaac-win64-${{ env.QAAC_VERSION }}.zip
+
+    - name: Create Enigma project for win32
+      run: |
+        $files = Get-ChildItem win32 | Where-Object { $_.Name -ne "qaac.exe" }
+        $xml = @"
+<VirtualBox>
+  <InputFile>win32\qaac.exe</InputFile>
+  <OutputFile>qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe</OutputFile>
+  <Files>
+"@
+        foreach ($f in $files) {
+          $xml += "    <File>win32\$($f.Name)</File>`n"
+        }
+        $xml += "  </Files>`n</VirtualBox>"
+        $xml | Out-File config32.xml -Encoding ascii
+
+    - name: Create Enigma project for win64
+      run: |
+        $files = Get-ChildItem win64 | Where-Object { $_.Name -ne "qaac.exe" }
+        $xml = @"
+<VirtualBox>
+  <InputFile>win64\qaac.exe</InputFile>
+  <OutputFile>qaac-singleton-win64-${{ env.QAAC_VERSION }}.exe</OutputFile>
+  <Files>
+"@
+        foreach ($f in $files) {
+          $xml += "    <File>win64\$($f.Name)</File>`n"
+        }
+        $xml += "  </Files>`n</VirtualBox>"
+        $xml | Out-File config64.xml -Encoding ascii
+
+    - name: Run Enigma Virtual Box
+      run: |
+        & "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config32.xml
+        & "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config64.xml
+
+    - name: Upload zip artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: qaac-win32-${{ env.QAAC_VERSION }}
+        path: qaac-win32-${{ env.QAAC_VERSION }}.zip
+
+    - name: Upload zip artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: qaac-win64-${{ env.QAAC_VERSION }}
+        path: qaac-win64-${{ env.QAAC_VERSION }}.zip
+
+    - name: Upload singleton EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: qaac-singleton-win32-${{ env.QAAC_VERSION }}
+        path: qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe
+
+    - name: Upload singleton EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: qaac-singleton-win64-${{ env.QAAC_VERSION }}
+        path: qaac-singleton-win64-${{ env.QAAC_VERSION }}.exe
