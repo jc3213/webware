@@ -21,95 +21,84 @@ jobs:
         | xargs curl -L -o enigmavb.zip
 
     - name: Extract Enigma Virtual Box
-      run: 7z x enigmavb.zip -oenigmavb
+      shell: cmd
+      run: |
+        7z x enigmavb.zip -oenigmavb
 
     - name: Download latest qaac release
+      shell: cmd
       run: |
         curl -sL https://api.github.com/repos/nu774/qaac/releases/latest > latest.json
-        $url = (Get-Content latest.json | ConvertFrom-Json).assets | Where-Object { $_.name -like "qaac_*.zip" } | Select-Object -First 1 | Select-Object -ExpandProperty browser_download_url
-        $version = $url -replace ".*/qaac_(.*)\.zip", '$1'
-        echo "QAAC_VERSION=$version" >> $env:GITHUB_ENV
-        curl -L -o qaac.zip $url
+        for /f "tokens=2 delims=:," %%i in ('findstr "qaac_" latest.json') do (
+          set "QAAC_URL=%%i"
+        )
+        set "QAAC_URL=%QAAC_URL:~2,-1%"
+        set "QAAC_VERSION=%QAAC_URL:~0,-4%"
+        echo QAAC_VERSION=%QAAC_VERSION%>> %GITHUB_ENV%
+        curl -L -o qaac.zip %QAAC_URL%
 
-    - name: Extract qaac
+    - name: Extract qaac and prepare folders
+      shell: cmd
       run: |
         7z x qaac.zip -oqaac
-        New-Item -ItemType Directory -Path win32
-        New-Item -ItemType Directory -Path win64
-        Copy-Item qaac\x86\* win32\
-        Copy-Item qaac\x64\* win64\
+        mkdir win32
+        mkdir win64
+        copy /Y qaac\x86\* win32\
+        copy /Y qaac\x64\* win64\
 
     - name: Download iTunes installers
+      shell: cmd
       run: |
         curl -L -o iTunes32.exe https://www.apple.com/itunes/download/win32
         curl -L -o iTunes64.exe https://www.apple.com/itunes/download/win64
 
     - name: Extract DLLs
+      shell: cmd
       run: |
-        New-Item -ItemType Directory -Path itunes32
-        New-Item -ItemType Directory -Path itunes64
+        mkdir itunes32
+        mkdir itunes64
         innoextract -d itunes32 iTunes32.exe
         innoextract -d itunes64 iTunes64.exe
-
-        $dlls = @(
-          "ASL.dll", "CoreAudioToolbox.dll", "CoreFoundation.dll",
-          "libdispatch.dll", "libicuin.dll", "libicuuc.dll", "objc.dll"
+        for %%f in (
+          ASL.dll CoreAudioToolbox.dll CoreFoundation.dll
+          libdispatch.dll libicuin.dll libicuuc.dll objc.dll
+        ) do (
+          for /R itunes32 %%x in (%%f) do copy /Y "%%x" win32\
+          for /R itunes64 %%x in (%%f) do copy /Y "%%x" win64\
         )
+        for /R itunes32 %%x in (icudt*.dll) do copy /Y "%%x" win32\
+        for /R itunes64 %%x in (icudt*.dll) do copy /Y "%%x" win64\
 
-        foreach ($dll in $dlls) {
-          Get-ChildItem -Recurse itunes32 -Filter $dll | Copy-Item -Destination win32 -Force
-          Get-ChildItem -Recurse itunes64 -Filter $dll | Copy-Item -Destination win64 -Force
-        }
-
-        Get-ChildItem -Recurse itunes32 -Filter "icudt*.dll" | Copy-Item -Destination win32 -Force
-        Get-ChildItem -Recurse itunes64 -Filter "icudt*.dll" | Copy-Item -Destination win64 -Force
-
-    - name: Generate Enigma config (win32)
-      shell: python
+    - name: Generate config32.xml
+      shell: cmd
       run: |
-        import os
-        from xml.etree.ElementTree import Element, SubElement, tostring
-        from xml.dom.minidom import parseString
+        echo ^<VirtualBox^> > config32.xml
+        echo   ^<InputFile^>win32\qaac.exe^</InputFile^> >> config32.xml
+        echo   ^<OutputFile^>qaac-singleton-win32-%QAAC_VERSION%.exe^</OutputFile^> >> config32.xml
+        echo   ^<Files^> >> config32.xml
+        for %%f in (win32\*.dll) do echo     ^<File^>%%f^</File^> >> config32.xml
+        echo   ^</Files^> >> config32.xml
+        echo ^</VirtualBox^> >> config32.xml
 
-        version = os.environ["QAAC_VERSION"]
-        files = os.listdir("win32")
-        root = Element("VirtualBox")
-        SubElement(root, "InputFile").text = f"win32\\qaac.exe"
-        SubElement(root, "OutputFile").text = f"qaac-singleton-win32-{version}.exe"
-        files_elem = SubElement(root, "Files")
-        for f in files:
-            if f.lower() != "qaac.exe":
-                SubElement(files_elem, "File").text = f"win32\\{f}"
-        xml_str = parseString(tostring(root)).toprettyxml(indent="  ")
-        with open("config32.xml", "w") as f:
-            f.write(xml_str)
-
-    - name: Generate Enigma config (win64)
-      shell: python
+    - name: Generate config64.xml
+      shell: cmd
       run: |
-        import os
-        from xml.etree.ElementTree import Element, SubElement, tostring
-        from xml.dom.minidom import parseString
-
-        version = os.environ["QAAC_VERSION"]
-        files = os.listdir("win64")
-        root = Element("VirtualBox")
-        SubElement(root, "InputFile").text = f"win64\\qaac.exe"
-        SubElement(root, "OutputFile").text = f"qaac-singleton-win64-{version}.exe"
-        files_elem = SubElement(root, "Files")
-        for f in files:
-            if f.lower() != "qaac.exe":
-                SubElement(files_elem, "File").text = f"win64\\{f}"
-        xml_str = parseString(tostring(root)).toprettyxml(indent="  ")
-        with open("config64.xml", "w") as f:
-            f.write(xml_str)
+        echo ^<VirtualBox^> > config64.xml
+        echo   ^<InputFile^>win64\qaac.exe^</InputFile^> >> config64.xml
+        echo   ^<OutputFile^>qaac-singleton-win64-%QAAC_VERSION%.exe^</OutputFile^> >> config64.xml
+        echo   ^<Files^> >> config64.xml
+        for %%f in (win64\*.dll) do echo     ^<File^>%%f^</File^> >> config64.xml
+        echo   ^</Files^> >> config64.xml
+        echo ^</VirtualBox^> >> config64.xml
 
     - name: Run Enigma Virtual Box
+      shell: cmd
       run: |
         enigmavb\EnigmaVB.exe config32.xml
         enigmavb\EnigmaVB.exe config64.xml
 
     - name: Package zip bundles
+      shell: cmd
       run: |
         7z a -mx=9 qaac-win32-%QAAC_VERSION%.zip .\win32\*
         7z a -mx=9 qaac-win64-%QAAC_VERSION%.zip .\win64\*
