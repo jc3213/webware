@@ -38,10 +38,10 @@ jobs:
 
     - name: Extract qaac and prepare folders
       run: |
-        7z x qaac.zip -oqaac
+        7z x qaac.zip
         mkdir -p win32 win64
-        cp qaac/x86/* win32/
-        cp qaac/x64/* win64/
+        cp qaac_*/x86/* win32/
+        cp qaac_*/x64/* win64/
 
     - name: Download iTunes installers
       run: |
