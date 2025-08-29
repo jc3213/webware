@@ -34,9 +34,10 @@ jobs:
     - name: Extract qaac
       run: |
         7z x qaac.zip -oqaac
-        mkdir win32 win64
-        copy qaac\x86\* win32\
-        copy qaac\x64\* win64\
+        New-Item -ItemType Directory -Path win32
+        New-Item -ItemType Directory -Path win64
+        Copy-Item qaac\x86\* win32\
+        Copy-Item qaac\x64\* win64\
 
     - name: Download iTunes installers
       run: |
@@ -45,19 +46,23 @@ jobs:
 
     - name: Extract DLLs
       run: |
-        mkdir itunes32 itunes64
+        New-Item -ItemType Directory -Path itunes32
+        New-Item -ItemType Directory -Path itunes64
         innoextract -d itunes32 iTunes32.exe
         innoextract -d itunes64 iTunes64.exe
 
-        for %%d in (
-          ASL.dll CoreAudioToolbox.dll CoreFoundation.dll
-          libdispatch.dll libicuin.dll libicuuc.dll objc.dll
-        ) do (
-          for /r itunes32 %%f in (%%d) do copy "%%f" win32\
-          for /r itunes64 %%f in (%%d) do copy "%%f" win64\
+        $dlls = @(
+          "ASL.dll", "CoreAudioToolbox.dll", "CoreFoundation.dll",
+          "libdispatch.dll", "libicuin.dll", "libicuuc.dll", "objc.dll"
         )
-        for /r itunes32 %%f in (icudt*.dll) do copy "%%f" win32\
-        for /r itunes64 %%f in (icudt*.dll) do copy "%%f" win64\
+
+        foreach ($dll in $dlls) {
+          Get-ChildItem -Recurse itunes32 -Filter $dll | Copy-Item -Destination win32 -Force
+          Get-ChildItem -Recurse itunes64 -Filter $dll | Copy-Item -Destination win64 -Force
+        }
+
+        Get-ChildItem -Recurse itunes32 -Filter "icudt*.dll" | Copy-Item -Destination win32 -Force
+        Get-ChildItem -Recurse itunes64 -Filter "icudt*.dll" | Copy-Item -Destination win64 -Force
 
     - name: Generate Enigma config (win32)
       shell: python
