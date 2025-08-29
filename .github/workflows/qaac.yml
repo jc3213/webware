@@ -54,15 +54,20 @@ jobs:
         7z x iTunes32.exe -oitunes32_exe
         7z x iTunes64.exe -oitunes64_exe
 
-    - name: Extract DLLs from MSI
+    - name: Extract DLLs from MSI using cmd
+      shell: cmd
       run: |
-        mkdir -p itunes32_dll itunes64_dll
-        MSI32=$(find itunes32_exe -iname "iTunes*.msi" | head -n 1)
-        MSI64=$(find itunes64_exe -iname "iTunes*.msi" | head -n 1)
+        mkdir itunes32_dll
+        mkdir itunes64_dll
 
-        msiexec /a "$MSI32" /qn TARGETDIR="$PWD/itunes32_dll" >nul 2>nul
-        msiexec /a "$MSI64" /qn TARGETDIR="$PWD/itunes64_dll" >nul 2>nul
+        for /f %%i in ('dir /b /s itunes32_exe\iTunes*.msi') do set MSI32=%%i
+        for /f %%i in ('dir /b /s itunes64_exe\iTunes*.msi') do set MSI64=%%i
 
+        msiexec /a "%MSI32%" /qn TARGETDIR="%CD%\itunes32_dll"
+        msiexec /a "%MSI64%" /qn TARGETDIR="%CD%\itunes64_dll"
+
+    - name: Copy DLLs to win32 and win64
+      run: |
         DLLS=("ASL.dll" "CoreAudioToolbox.dll" "CoreFoundation.dll" "libdispatch.dll" "libicuin.dll" "libicuuc.dll" "objc.dll")
         for dll in "${DLLS[@]}"; do
           find itunes32_dll -iname "$dll" -exec cp {} win32/ \;
