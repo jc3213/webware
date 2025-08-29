@@ -9,7 +9,7 @@ jobs:
 
     steps:
     - name: Install tools
-      run: choco install -y 7zip innoextract python
+      run: choco install -y 7zip innoextract
 
     - name: Get latest Enigma Virtual Box release
       shell: bash
@@ -28,14 +28,14 @@ jobs:
     - name: Download latest qaac release
       shell: cmd
       run: |
-        curl -sL https://api.github.com/repos/nu774/qaac/releases/latest > latest.json
+        curl -sL "https://api.github.com/repos/nu774/qaac/releases/latest" -o latest.json
         for /f "tokens=2 delims=:," %%i in ('findstr "qaac_" latest.json') do (
           set "QAAC_URL=%%i"
         )
         set "QAAC_URL=%QAAC_URL:~2,-1%"
         set "QAAC_VERSION=%QAAC_URL:~0,-4%"
         echo QAAC_VERSION=%QAAC_VERSION%>> %GITHUB_ENV%
-        curl -L -o qaac.zip %QAAC_URL%
+        curl -L -o qaac.zip "%QAAC_URL%"
 
     - name: Extract qaac and prepare folders
       shell: cmd
@@ -49,8 +49,8 @@ jobs:
     - name: Download iTunes installers
       shell: cmd
       run: |
-        curl -L -o iTunes32.exe https://www.apple.com/itunes/download/win32
-        curl -L -o iTunes64.exe https://www.apple.com/itunes/download/win64
+        curl -L -o iTunes32.exe "https://www.apple.com/itunes/download/win32"
+        curl -L -o iTunes64.exe "https://www.apple.com/itunes/download/win64"
 
     - name: Extract DLLs
       shell: cmd
