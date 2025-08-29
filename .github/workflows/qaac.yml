@@ -52,16 +52,20 @@ jobs:
         Compress-Archive -Path win64\* -DestinationPath qaac-win64-${{ env.QAAC_VERSION }}.zip
 
 - name: Create Enigma project for win32
+  shell: pwsh
   run: |
     $files = Get-ChildItem win32 | Where-Object { $_.Name -ne "qaac.exe" }
-    $xmlPath = "config32.xml"
-    Set-Content -Path $xmlPath -Value "<VirtualBox>`n  <InputFile>win32\qaac.exe</InputFile>`n  <OutputFile>qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe</OutputFile>`n  <Files>"
-
+    $config = @()
+    $config += "<VirtualBox>"
+    $config += "  <InputFile>win32\qaac.exe</InputFile>"
+    $config += "  <OutputFile>qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe</OutputFile>"
+    $config += "  <Files>"
     foreach ($f in $files) {
-      Add-Content -Path $xmlPath -Value "    <File>win32\$($f.Name)</File>"
+      $config += "    <File>win32\$($f.Name)</File>"
     }
-
-    Add-Content -Path $xmlPath -Value "  </Files>`n</VirtualBox>"
+    $config += "  </Files>"
+    $config += "</VirtualBox>"
+    $config | Set-Content -Path config32.xml -Encoding ascii
 
 - name: Create Enigma project for win64
   run: |
