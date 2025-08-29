@@ -11,10 +11,17 @@ jobs:
     - name: Install tools
       run: choco install -y 7zip innoextract python
 
-    - name: Download Enigma Virtual Box portable
+    - name: Get latest Enigma Virtual Box release
+      shell: bash
       run: |
-        curl -L -o enigmavb.zip https://github.com/dirkarnez/enigma-virtual-box-portable/releases/download/v11.10.20241106/enigmavb.zip
-        7z x enigmavb.zip -oenigmavb
+        curl -s https://api.github.com/repos/dirkarnez/enigma-virtual-box-portable/releases/latest \
+        | grep "browser_download_url" \
+        | grep "enigma-virtual-box-portable-v.*\.zip" \
+        | cut -d '"' -f 4 \
+        | xargs curl -L -o enigmavb.zip
+
+    - name: Extract Enigma Virtual Box
+      run: 7z x enigmavb.zip -oenigmavb
 
     - name: Download latest qaac release
       run: |
