@@ -10,15 +10,18 @@ jobs:
     steps:
     - name: Install tools
       run: |
-        choco install -y 7zip innoextract enigmavirtualbox
+        choco install -y 7zip innoextract enigmavirtualbox python
 
     - name: Download latest qaac release
       run: |
         curl -sL https://api.github.com/repos/nu774/qaac/releases/latest > latest.json
-        $url = (Get-Content latest.json | ConvertFrom-Json).assets | Where-Object { $_.name -like "qaac_*.zip" } | Select-Object -First 1 | Select-Object -ExpandProperty browser_download_url
-        $version = $url -replace ".*/qaac_(.*)\.zip", '$1'
-        echo "QAAC_VERSION=$version" >> $env:GITHUB_ENV
-        curl -L -o qaac.zip $url
+        for /f "tokens=*" %%i in ('type latest.json ^| findstr /r "browser_download_url.*qaac_.*\.zip"') do (
+          set "url=%%i"
+        )
+        set "url=%url:~27,-1%"
+        set "version=%url:~0,-4%"
+        echo QAAC_VERSION=%version% >> %GITHUB_ENV%
+        curl -L -o qaac.zip %url%
 
     - name: Extract qaac
       run: |
@@ -38,71 +41,85 @@ jobs:
         innoextract -d itunes32 iTunes32.exe
         innoextract -d itunes64 iTunes64.exe
 
-        $dlls = @(
-          "ASL.dll", "CoreAudioToolbox.dll", "CoreFoundation.dll",
-          "libdispatch.dll", "libicuin.dll", "libicuuc.dll", "objc.dll"
+        for %%d in (
+          ASL.dll CoreAudioToolbox.dll CoreFoundation.dll
+          libdispatch.dll libicuin.dll libicuuc.dll objc.dll
+        ) do (
+          for /r itunes32 %%f in (%%d) do copy "%%f" win32\
+          for /r itunes64 %%f in (%%d) do copy "%%f" win64\
         )
+        for /r itunes32 %%f in (icudt*.dll) do copy "%%f" win32\
+        for /r itunes64 %%f in (icudt*.dll) do copy "%%f" win64\
 
-        Get-ChildItem -Recurse itunes32 | Where-Object { $_.Name -match "icudt.*\.dll" -or $dlls -contains $_.Name } | Copy-Item -Destination win32 -Force
-        Get-ChildItem -Recurse itunes64 | Where-Object { $_.Name -match "icudt.*\.dll" -or $dlls -contains $_.Name } | Copy-Item -Destination win64 -Force
-
-    - name: Package zip bundles
+    - name: Generate Enigma config (win32)
+      shell: python
       run: |
-        Compress-Archive -Path win32\* -DestinationPath qaac-win32-${{ env.QAAC_VERSION }}.zip
-        Compress-Archive -Path win64\* -DestinationPath qaac-win64-${{ env.QAAC_VERSION }}.zip
+        import os
+        from xml.etree.ElementTree import Element, SubElement, tostring
+        from xml.dom.minidom import parseString
 
-- name: Create Enigma project for win32
-  shell: pwsh
-  run: |
-    $files = Get-ChildItem win32 | Where-Object { $_.Name -ne "qaac.exe" }
-    $config = @()
-    $config += "<VirtualBox>"
-    $config += "  <InputFile>win32\qaac.exe</InputFile>"
-    $config += "  <OutputFile>qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe</OutputFile>"
-    $config += "  <Files>"
-    foreach ($f in $files) {
-      $config += "    <File>win32\$($f.Name)</File>"
-    }
-    $config += "  </Files>"
-    $config += "</VirtualBox>"
-    $config | Set-Content -Path config32.xml -Encoding ascii
+        version = os.environ["QAAC_VERSION"]
+        files = os.listdir("win32")
+        root = Element("VirtualBox")
+        SubElement(root, "InputFile").text = f"win32\\qaac.exe"
+        SubElement(root, "OutputFile").text = f"qaac-singleton-win32-{version}.exe"
+        files_elem = SubElement(root, "Files")
+        for f in files:
+            if f.lower() != "qaac.exe":
+                SubElement(files_elem, "File").text = f"win32\\{f}"
+        xml_str = parseString(tostring(root)).toprettyxml(indent="  ")
+        with open("config32.xml", "w") as f:
+            f.write(xml_str)
 
-- name: Create Enigma project for win64
-  run: |
-    $files = Get-ChildItem win64 | Where-Object { $_.Name -ne "qaac.exe" }
-    $xmlPath = "config64.xml"
-    Set-Content -Path $xmlPath -Value "<VirtualBox>`n  <InputFile>win64\qaac.exe</InputFile>`n  <OutputFile>qaac-singleton-win64-${{ env.QAAC_VERSION }}.exe</OutputFile>`n  <Files>"
+    - name: Generate Enigma config (win64)
+      shell: python
+      run: |
+        import os
+        from xml.etree.ElementTree import Element, SubElement, tostring
+        from xml.dom.minidom import parseString
 
-    foreach ($f in $files) {
-      Add-Content -Path $xmlPath -Value "    <File>win64\$($f.Name)</File>"
-    }
-
-    Add-Content -Path $xmlPath -Value "  </Files>`n</VirtualBox>"
+        version = os.environ["QAAC_VERSION"]
+        files = os.listdir("win64")
+        root = Element("VirtualBox")
+        SubElement(root, "InputFile").text = f"win64\\qaac.exe"
+        SubElement(root, "OutputFile").text = f"qaac-singleton-win64-{version}.exe"
+        files_elem = SubElement(root, "Files")
+        for f in files:
+            if f.lower() != "qaac.exe":
+                SubElement(files_elem, "File").text = f"win64\\{f}"
+        xml_str = parseString(tostring(root)).toprettyxml(indent="  ")
+        with open("config64.xml", "w") as f:
+            f.write(xml_str)
 
     - name: Run Enigma Virtual Box
       run: |
-        & "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config32.xml
-        & "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config64.xml
+        "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config32.xml
+        "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config64.xml
 
-    - name: Upload zip artifacts
+    - name: Package zip bundles
+      run: |
+        7z a -mx=9 qaac-win32-%QAAC_VERSION%.zip .\win32\*
+        7z a -mx=9 qaac-win64-%QAAC_VERSION%.zip .\win64\*
+
+    - name: Upload win32 zip
       uses: actions/upload-artifact@v4
       with:
         name: qaac-win32-${{ env.QAAC_VERSION }}
         path: qaac-win32-${{ env.QAAC_VERSION }}.zip
 
-    - name: Upload zip artifacts
+    - name: Upload win64 zip
       uses: actions/upload-artifact@v4
       with:
         name: qaac-win64-${{ env.QAAC_VERSION }}
         path: qaac-win64-${{ env.QAAC_VERSION }}.zip
 
-    - name: Upload singleton EXE
+    - name: Upload singleton win32 EXE
       uses: actions/upload-artifact@v4
       with:
         name: qaac-singleton-win32-${{ env.QAAC_VERSION }}
         path: qaac-singleton-win32-${{ env.QAAC_VERSION }}.exe
 
-    - name: Upload singleton EXE
+    - name: Upload singleton win64 EXE
       uses: actions/upload-artifact@v4
       with:
         name: qaac-singleton-win64-${{ env.QAAC_VERSION }}
