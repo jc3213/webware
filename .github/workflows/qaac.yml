@@ -9,19 +9,20 @@ jobs:
 
     steps:
     - name: Install tools
+      run: choco install -y 7zip innoextract python
+
+    - name: Download Enigma Virtual Box portable
       run: |
-        choco install -y 7zip innoextract enigmavirtualbox python
+        curl -L -o enigmavb.zip https://github.com/dirkarnez/enigma-virtual-box-portable/releases/download/v11.10.20241106/enigmavb.zip
+        7z x enigmavb.zip -oenigmavb
 
     - name: Download latest qaac release
       run: |
         curl -sL https://api.github.com/repos/nu774/qaac/releases/latest > latest.json
-        for /f "tokens=*" %%i in ('type latest.json ^| findstr /r "browser_download_url.*qaac_.*\.zip"') do (
-          set "url=%%i"
-        )
-        set "url=%url:~27,-1%"
-        set "version=%url:~0,-4%"
-        echo QAAC_VERSION=%version% >> %GITHUB_ENV%
-        curl -L -o qaac.zip %url%
+        $url = (Get-Content latest.json | ConvertFrom-Json).assets | Where-Object { $_.name -like "qaac_*.zip" } | Select-Object -First 1 | Select-Object -ExpandProperty browser_download_url
+        $version = $url -replace ".*/qaac_(.*)\.zip", '$1'
+        echo "QAAC_VERSION=$version" >> $env:GITHUB_ENV
+        curl -L -o qaac.zip $url
 
     - name: Extract qaac
       run: |
@@ -93,8 +94,8 @@ jobs:
 
     - name: Run Enigma Virtual Box
       run: |
-        "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config32.xml
-        "C:\Program Files\Enigma Virtual Box\EnigmaVB.exe" config64.xml
+        enigmavb\EnigmaVB.exe config32.xml
+        enigmavb\EnigmaVB.exe config64.xml
 
     - name: Package zip bundles
       run: |
