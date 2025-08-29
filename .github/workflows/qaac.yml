@@ -86,7 +86,7 @@ jobs:
         find itunes64_dll -iname "icudt*.dll" -exec cp {} win64/ \;
 
     - name: Generate .evb project files
-      run: node js/generate-evb.js
+      run: node webware/js/generate-evb.js
 
     - name: Run Enigma Virtual Box Console
       shell: cmd
