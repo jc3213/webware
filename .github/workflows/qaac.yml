@@ -1,4 +1,5 @@
 name: qaac_portable
+
 on:
   workflow_dispatch:
 
@@ -32,10 +33,10 @@ jobs:
     - name: Extract qaac and prepare folders
       run: |
         7z x qaac.zip
-        mkdir -p qaac_portable-${QAAC_VERSION}/win32
-        mkdir -p qaac_portable-${QAAC_VERSION}/win64
-        cp qaac_*/x86/* qaac_portable-${QAAC_VERSION}/win32/
-        cp qaac_*/x64/* qaac_portable-${QAAC_VERSION}/win64/
+        mkdir -p qaac-${QAAC_VERSION}-win32_portable
+        mkdir -p qaac-${QAAC_VERSION}-win64_portable
+        cp qaac_*/x86/* qaac-${QAAC_VERSION}-win32_portable/
+        cp qaac_*/x64/* qaac-${QAAC_VERSION}-win64_portable/
 
     - name: Download iTunes installers
       run: |
@@ -60,19 +61,25 @@ jobs:
         msiexec /a "%MSI32%" /qn TARGETDIR="%CD%\itunes32_dll"
         msiexec /a "%MSI64%" /qn TARGETDIR="%CD%\itunes64_dll"
 
-    - name: Copy DLLs to win32 and win64
+    - name: Copy DLLs to win32 and win64 folders
       run: |
         DLLS=("ASL.dll" "CoreAudioToolbox.dll" "CoreFoundation.dll" "libdispatch.dll" "libicuin.dll" "libicuuc.dll" "objc.dll")
         for dll in "${DLLS[@]}"; do
-          find itunes32_dll -iname "$dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win32/ \;
-          find itunes64_dll -iname "$dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win64/ \;
+          find itunes32_dll -iname "$dll" -exec cp {} qaac-${QAAC_VERSION}-win32_portable/ \;
+          find itunes64_dll -iname "$dll" -exec cp {} qaac-${QAAC_VERSION}-win64_portable/ \;
         done
 
-        find itunes32_dll -iname "icudt*.dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win32/ \;
-        find itunes64_dll -iname "icudt*.dll" -exec cp {} qaac_portable-${QAAC_VERSION}/win64/ \;
+        find itunes32_dll -iname "icudt*.dll" -exec cp {} qaac-${QAAC_VERSION}-win32_portable/ \;
+        find itunes64_dll -iname "icudt*.dll" -exec cp {} qaac-${QAAC_VERSION}-win64_portable/ \;
 
-    - name: Upload portable bundle
+    - name: Upload win32 portable bundle
       uses: actions/upload-artifact@v4
       with:
-        name: qaac-portable-${{ env.QAAC_VERSION }}
-        path: qaac_portable-${{ env.QAAC_VERSION }}
+        name: qaac-${{ env.QAAC_VERSION }}-win32_portable
+        path: qaac-${{ env.QAAC_VERSION }}-win32_portable
+
+    - name: Upload win64 portable bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: qaac-${{ env.QAAC_VERSION }}-win64_portable
+        path: qaac-${{ env.QAAC_VERSION }}-win64_portable
