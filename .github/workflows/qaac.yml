@@ -7,12 +7,15 @@ jobs:
   build:
     runs-on: windows-latest
 
+    defaults:
+      run:
+        shell: bash
+
     steps:
     - name: Install tools
       run: choco install -y 7zip innoextract
 
     - name: Get latest Enigma Virtual Box release
-      shell: bash
       run: |
         curl -s https://api.github.com/repos/dirkarnez/enigma-virtual-box-portable/releases/latest \
         | grep "browser_download_url" \
@@ -21,87 +24,82 @@ jobs:
         | xargs curl -L -o enigmavb.zip
 
     - name: Extract Enigma Virtual Box
-      shell: cmd
-      run: |
-        7z x enigmavb.zip -oenigmavb
+      run: 7z x enigmavb.zip -oenigmavb
 
     - name: Download latest qaac release
-      shell: cmd
       run: |
-        curl -sL "https://api.github.com/repos/nu774/qaac/releases/latest" -o latest.json
-        for /f "tokens=2 delims=:," %%i in ('findstr "qaac_" latest.json') do (
-          set "QAAC_URL=%%i"
-        )
-        set "QAAC_URL=%QAAC_URL:~2,-1%"
-        set "QAAC_VERSION=%QAAC_URL:~0,-4%"
-        echo QAAC_VERSION=%QAAC_VERSION%>> %GITHUB_ENV%
-        curl -L -o qaac.zip "%QAAC_URL%"
+        QAAC_URL=$(curl -s https://api.github.com/repos/nu774/qaac/releases/latest \
+          | grep "browser_download_url" \
+          | grep "qaac_.*\.zip" \
+          | cut -d '"' -f 4)
+        QAAC_VERSION=$(basename "$QAAC_URL" | sed 's/qaac_\(.*\)\.zip/\1/')
+        echo "QAAC_VERSION=$QAAC_VERSION" >> $GITHUB_ENV
+        curl -L -o qaac.zip "$QAAC_URL"
 
     - name: Extract qaac and prepare folders
-      shell: cmd
       run: |
         7z x qaac.zip -oqaac
-        mkdir win32
-        mkdir win64
-        copy /Y qaac\x86\* win32\
-        copy /Y qaac\x64\* win64\
+        mkdir -p win32 win64
+        cp qaac/x86/* win32/
+        cp qaac/x64/* win64/
 
     - name: Download iTunes installers
-      shell: cmd
       run: |
         curl -L -o iTunes32.exe "https://www.apple.com/itunes/download/win32"
         curl -L -o iTunes64.exe "https://www.apple.com/itunes/download/win64"
 
     - name: Extract DLLs
-      shell: cmd
       run: |
-        mkdir itunes32
-        mkdir itunes64
+        mkdir -p itunes32 itunes64
         innoextract -d itunes32 iTunes32.exe
         innoextract -d itunes64 iTunes64.exe
-        for %%f in (
-          ASL.dll CoreAudioToolbox.dll CoreFoundation.dll
-          libdispatch.dll libicuin.dll libicuuc.dll objc.dll
-        ) do (
-          for /R itunes32 %%x in (%%f) do copy /Y "%%x" win32\
-          for /R itunes64 %%x in (%%f) do copy /Y "%%x" win64\
-        )
-        for /R itunes32 %%x in (icudt*.dll) do copy /Y "%%x" win32\
-        for /R itunes64 %%x in (icudt*.dll) do copy /Y "%%x" win64\
+
+        DLLS=("ASL.dll" "CoreAudioToolbox.dll" "CoreFoundation.dll" "libdispatch.dll" "libicuin.dll" "libicuuc.dll" "objc.dll")
+        for dll in "${DLLS[@]}"; do
+          find itunes32 -iname "$dll" -exec cp {} win32/ \;
+          find itunes64 -iname "$dll" -exec cp {} win64/ \;
+        done
+
+        find itunes32 -iname "icudt*.dll" -exec cp {} win32/ \;
+        find itunes64 -iname "icudt*.dll" -exec cp {} win64/ \;
 
     - name: Generate config32.xml
-      shell: cmd
       run: |
-        echo ^<VirtualBox^> > config32.xml
-        echo   ^<InputFile^>win32\qaac.exe^</InputFile^> >> config32.xml
-        echo   ^<OutputFile^>qaac-singleton-win32-%QAAC_VERSION%.exe^</OutputFile^> >> config32.xml
-        echo   ^<Files^> >> config32.xml
-        for %%f in (win32\*.dll) do echo     ^<File^>%%f^</File^> >> config32.xml
-        echo   ^</Files^> >> config32.xml
-        echo ^</VirtualBox^> >> config32.xml
+        {
+          echo "<VirtualBox>"
+          echo "  <InputFile>win32\\qaac.exe</InputFile>"
+          echo "  <OutputFile>qaac-singleton-win32-${QAAC_VERSION}.exe</OutputFile>"
+          echo "  <Files>"
+          for f in win32/*.dll; do
+            echo "    <File>${f}</File>"
+          done
+          echo "  </Files>"
+          echo "</VirtualBox>"
+        } > config32.xml
 
     - name: Generate config64.xml
-      shell: cmd
       run: |
-        echo ^<VirtualBox^> > config64.xml
-        echo   ^<InputFile^>win64\qaac.exe^</InputFile^> >> config64.xml
-        echo   ^<OutputFile^>qaac-singleton-win64-%QAAC_VERSION%.exe^</OutputFile^> >> config64.xml
-        echo   ^<Files^> >> config64.xml
-        for %%f in (win64\*.dll) do echo     ^<File^>%%f^</File^> >> config64.xml
-        echo   ^</Files^> >> config64.xml
-        echo ^</VirtualBox^> >> config64.xml
+        {
+          echo "<VirtualBox>"
+          echo "  <InputFile>win64\\qaac.exe</InputFile>"
+          echo "  <OutputFile>qaac-singleton-win64-${QAAC_VERSION}.exe</OutputFile>"
+          echo "  <Files>"
+          for f in win64/*.dll; do
+            echo "    <File>${f}</File>"
+          done
+          echo "  </Files>"
+          echo "</VirtualBox>"
+        } > config64.xml
 
     - name: Run Enigma Virtual Box
-      shell: cmd
       run: |
-        enigmavb\EnigmaVB.exe config32.xml
-        enigmavb\EnigmaVB.exe config64.xml
+        ./enigmavb/EnigmaVB.exe config32.xml
+        ./enigmavb/EnigmaVB.exe config64.xml
 
     - name: Package zip bundles
-      shell: cmd
       run: |
-        7z a -mx=9 qaac-win32-%QAAC_VERSION%.zip .\win32\*
-        7z a -mx=9 qaac-win64-%QAAC_VERSION%.zip .\win64\*
+        7z a -mx=9 qaac-win32-${QAAC_VERSION}.zip ./win32/*
+        7z a -mx=9 qaac-win64-${QAAC_VERSION}.zip ./win64/*
 
     - name: Upload win32 zip
       uses: actions/upload-artifact@v4
