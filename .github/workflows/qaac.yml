@@ -1,4 +1,4 @@
-name: qaac_portable
+name: qaac-portable
 
 on:
   workflow_dispatch:
