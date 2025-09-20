@@ -18,13 +18,9 @@ body {
 }
 
 button {
-    padding: 10px 40px;
+    padding: 10px 40px !important;
     font-size: 20px;
     cursor: pointer;
-}
-
-button:disabled {
-    padding: 10px 40px;
 }
 
 textarea {
@@ -46,12 +42,11 @@ textarea {
 
     const callMap = new Map();
 
-    const callback = (aria2c, params) => {
+    const callback = (aria2c, id, params) => {
         return new Promise((resolve, reject) => {
-            let id = crypto.randomUUID();
             let timer = setTimeout(() => {
                 callMap.delete(id);
-                reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.17.0.3548.') );
+                reject( new Error('"Download With Aria2" is either not installed, disabled, or outdated!') );
             }, 3000);
             callMap.set(id, (result) => {
                 clearTimeout(timer);
@@ -73,25 +68,12 @@ textarea {
     });
 
     window.aria2Bridge = {
-        status: () => callback('aria2c_status'),
-        download: (params) => callback('aria2c_download', params)
+        status: () => callback('aria2c_status', crypto.randomUUID()),
+        download: (params) => callback('aria2c_download', crypto.randomUUID(), params)
     };
 
     // support old version
-    window.aria2Echo = () => {
-        return new Promise((resolve, reject) => {
-            let timer = setTimeout(() => {
-                callMap.delete('echo');
-                reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.15.4.3371.') );
-            }, 3000);
-            callMap.set('echo', (result) => {
-                clearTimeout(timer);
-                callMap.delete('echo');
-                resolve(result);
-            });
-            window.postMessage({ aria2c: 'aria2c_jsonrpc_echo' });
-        });
-    };
+    window.aria2Echo = () => callback('aria2c_jsonrpc_echo', 'echo');
 })();
 
 let [testBtn, testResult] = document.body.children;
