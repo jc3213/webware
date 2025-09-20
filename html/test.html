@@ -93,6 +93,7 @@ textarea {
 let [testBtn, testResult] = document.body.children;
 
 function startTest() {
+    testBtn.disabled = true;
     testResult.value = 'Evaluating if "Download With Aria2" is within v4.15.4.3371 to v4.16.4.3450....';
     aria2Echo().then(onSuccess).catch((err) => {
         testResult.value = 'Evaluating if "Download With Aria2" is higher than v4.17.0.3548....';
@@ -103,10 +104,12 @@ function startTest() {
 function onSuccess(result) {
     let { name, version } = result.manifest;
     testResult.value = 'Extension Name: ' + name + '\nVersion: ' + version;
+    testBtn.disabled = false;
 }
 
 function onFailure(error) {
     testResult.value = error;
+    testBtn.disabled = false;
 }
 
 testBtn.addEventListener('click', startTest);
