@@ -43,7 +43,7 @@ let [testBtn, testResult] = document.body.children;
 function startTest() {
     testBtn.disabled = true;
     testResult.value = 'Evaluating if "Download With Aria2" is higher than v4.17.0.3548....';
-    aria2c.status().then(onSuccess).catch(onFailure);
+    setTimeout(() => aria2c.status().then(onSuccess).catch(onFailure), 1000);
 }
 
 function onSuccess(result) {
