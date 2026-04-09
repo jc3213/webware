@@ -34,47 +34,11 @@ textarea {
 <body>
     <button>Run</button>
     <textarea disabled></textarea>
+    <script src="https://jc3213.github.io/download_with_aria2/inject.js"
+            integrity="sha512-GlG/srJd4raj3P4ZEioaf6lZAeEpgslB0CKYzqsi+WbsWYRBh33Zb9gs1KpmhU5xLKTyMForjgLKR6TQzmRX5Q=="
+            crossorigin="anonymous"></script>
     <script>
-(() => {
-    if (window.aria2Bridge) {
-        return;
-    }
-
-    const callMap = new Map();
-
-    const callback = (aria2c, id, params) => {
-        return new Promise((resolve, reject) => {
-            let timer = setTimeout(() => {
-                callMap.delete(id);
-                reject( new Error('"Download With Aria2" is either not installed, disabled, or outdated!') );
-            }, 3000);
-            callMap.set(id, (result) => {
-                clearTimeout(timer);
-                callMap.delete(id);
-                resolve(result);
-            });
-            window.postMessage({ aria2c, id, params });
-        });
-    };
-
-    const dispatch = {
-        'aria2c_response': (result, id) => callMap.get(id)(result),
-        'aria2c_response_echo': (result) => callMap.get('echo')(result) // support old version
-    };
-
-    window.addEventListener('message', (event) => {
-        let { aria2c, id, result } = event.data;
-        dispatch[aria2c]?.(result, id);
-    });
-
-    window.aria2Bridge = {
-        status: () => callback('aria2c_status', crypto.randomUUID()),
-        download: (params) => callback('aria2c_download', crypto.randomUUID(), params)
-    };
-
-    // support old version
-    window.aria2Echo = () => callback('aria2c_jsonrpc_echo', 'echo');
-})();
+const aria2Echo = () => callback('aria2c_jsonrpc_echo', 'echo'); // support old version
 
 let [testBtn, testResult] = document.body.children;
 
@@ -88,7 +52,7 @@ function startTest() {
 }
 
 function onSuccess(result) {
-    let { name, version } = result.manifest;
+    let { name, version } = result.manifest ?? result;
     testResult.value = 'Extension Name: ' + name + '\nVersion: ' + version;
     testBtn.disabled = false;
 }
