@@ -14,13 +14,15 @@ body {
     height: 80vh;
     justify-content: center;
     margin: auto;
+    text-align: center;
     width: 380px;
 }
 
 button {
     cursor: pointer;
     font-size: 20px;
-    padding: 5px 30px;
+    margin: 5px;
+    padding: 5px 20px;
 }
 
 textarea {
@@ -32,24 +34,25 @@ textarea {
         </style>
     </head>
     <body>
-        <input id="fileInput" type="file" accept=".pac">
-        <textarea id="textInput" placeholder="输入/粘贴代码..."></textarea>
-        <br>
-        <br>
-        <br>
         <div>
+            <h1>输入</h1>
+            <input id="fileInput" type="file" accept=".pac">
+            <textarea id="textInput" placeholder="输入/粘贴代码，或拖拽文件到这里..."></textarea>
+        </div>
+        <div>
+            <h1>结果</h1>
             <button onclick="minifyFile()">压缩</button>
             <button onclick="copyFile()">复制</button>
             <button onclick="downloadFile()">下载</button>
+            <textarea id="textOutput" placeHolder="这里将输出结果..." readonly></textarea>
         </div>
-        <textarea id="textOutput" placeHolder="这里输出结果..." readonly></textarea>
         <script src="https://cdn.jsdelivr.net/npm/terser/dist/bundle.min.js"></script>
         <script>
-let lastCode = '';
 let currentCode;
 let minifiedCode;
 let minifiedBlob;
-let minifiedFileName;
+let minifiedFileName = 'minified.pac';
+let lastMinifiedCode;
 
 const fileInput = document.getElementById('fileInput');
 const textInput = document.getElementById('textInput');
@@ -57,8 +60,12 @@ const textOutput = document.getElementById('textOutput');
 const fileOutput = document.createElement('a');
 
 fileInput.addEventListener('change', async (event) => {
+    textInput.readOnly = true;
     textInput.value = await readFile(event.target.files[0]);
-    fileInput.value = '';
+});
+
+textInput.addEventListener('change', (event) => {
+    currentCode = textInput.value;
 });
 
 textInput.addEventListener('dragover', (event) => {
@@ -96,11 +103,11 @@ function minifyFile() {
 }
 
 async function copyFile() {
-    if (!minifiedCode) {
-        await minifyFile();
+    if (!currentCode) {
+        return alert('复制失败: 没有可供复制的内容');
     }
     if (!minifiedCode) {
-        return alert('复制失败: 没有可供复制的内容');
+        await minifyFile();
     }
     navigator.clipboard.writeText(minifiedCode)
         .then(() => alert('已成功复制结果'))
@@ -111,12 +118,10 @@ async function downloadFile() {
     if (!currentCode) {
         return alert('下载失败: 没有可供下载的内容');
     }
-    if (!minifiedCode) {
+    if (!minifiedCode || minifiedCode !== lastMinifiedCode) {
         await minifyFile();
-    }
-    if (minifiedCode !== lastCode) {
-        lastCode = minifiedCode;
-        let blob = new Blob([minifiedCode], { type: 'text/plain;charset=utf-8' });
+        lastMinifiedCode = minifiedCode;
+        let blob = new Blob([minifiedCode]);
         URL.revokeObjectURL(minifiedBlob);
         minifiedBlob = URL.createObjectURL(blob);
     }
