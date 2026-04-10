@@ -51,7 +51,7 @@ textarea {
 let currentCode;
 let minifiedCode;
 let minifiedBlob;
-let minifiedFileName = 'minified.pac';
+let lastFileName = 'minified.pac';
 let lastMinifiedCode;
 
 const fileInput = document.getElementById('fileInput');
@@ -60,8 +60,7 @@ const textOutput = document.getElementById('textOutput');
 const fileOutput = document.createElement('a');
 
 fileInput.addEventListener('change', async (event) => {
-    textInput.readOnly = true;
-    textInput.value = await readFile(event.target.files[0]);
+    readFile(event.target.files[0]);
 });
 
 textInput.addEventListener('change', (event) => {
@@ -72,24 +71,30 @@ textInput.addEventListener('dragover', (event) => {
     event.preventDefault();
 });
 
-textInput.addEventListener('drop', async (event) => {
+textInput.addEventListener('drop', (event) => {
     event.preventDefault();
     for (let file of event.dataTransfer.files) {
         if (file.name.endsWith('.pac')) {
-            textInput.value = await readFile(file);
+            let data = new DataTransfer();
+            data.items.add(file);
+            fileInput.files = data.files;
+            readFile(file);
             break;
         }
     }
 });
 
 function readFile(file) {
-    minifiedFileName = "minified_" + file.name;
-    return new Promise((resolve, reject) => {
-        let reader = new FileReader();
-        reader.onload = () => resolve(currentCode = reader.result);
-        reader.onerror = reject;
-        reader.readAsText(file);
-    });
+    let reader = new FileReader();
+    reader.onload = () => {
+        textInput.readOnly = true;
+        textInput.value = currentCode = reader.result;
+        lastFileName = 'minified_' + file.name;
+    }
+    reader.onerror = () => {
+        alert('读取失败: ' + reader.error.message);
+    };
+    reader.readAsText(file);
 }
 
 function minifyFile() {
@@ -126,7 +131,7 @@ async function downloadFile() {
         minifiedBlob = URL.createObjectURL(blob);
     }
     fileOutput.href = minifiedBlob;
-    fileOutput.download = minifiedFileName;
+    fileOutput.download = lastFileName;
     fileOutput.click();
 }
         </script>
