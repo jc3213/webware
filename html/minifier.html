@@ -42,7 +42,7 @@ textarea {
             <button onclick="copyFile()">复制</button>
             <button onclick="downloadFile()">下载</button>
         </div>
-        <textarea id="output" placeHolder="这里输出结果..." readonly></textarea>
+        <textarea id="textOutput" placeHolder="这里输出结果..." readonly></textarea>
         <script src="https://cdn.jsdelivr.net/npm/terser/dist/bundle.min.js"></script>
         <script>
 let lastCode = '';
@@ -53,8 +53,8 @@ let minifiedFileName;
 
 const fileInput = document.getElementById('fileInput');
 const textInput = document.getElementById('textInput');
-const output = document.getElementById('output');
-const fileSaver = document.createElement('a');
+const textOutput = document.getElementById('textOutput');
+const fileOutput = document.createElement('a');
 
 fileInput.addEventListener('change', async (event) => {
     textInput.value = await readFile(event.target.files[0]);
@@ -88,7 +88,7 @@ function readFile(file) {
 function minifyFile() {
     return Terser.minify(textInput.value)
         .then((result) => {
-            output.textContent = minifiedCode = result.code;
+            textOutput.value = minifiedCode = result.code;
         })
         .catch((error) => {
             alert('压缩失败: ' + error.message);
@@ -120,9 +120,9 @@ async function downloadFile() {
         URL.revokeObjectURL(minifiedBlob);
         minifiedBlob = URL.createObjectURL(blob);
     }
-    fileSaver.href = minifiedBlob;
-    fileSaver.download = minifiedFileName;
-    fileSaver.click();
+    fileOutput.href = minifiedBlob;
+    fileOutput.download = minifiedFileName;
+    fileOutput.click();
 }
         </script>
     </body>
