@@ -61,13 +61,18 @@ fileInput.addEventListener('change', async (event) => {
     fileInput.value = '';
 });
 
-textInput.addEventListener('ondragover', (event) => {
+textInput.addEventListener('dragover', (event) => {
     event.preventDefault();
 });
 
-textInput.addEventListener('ondrop', async (event) => {
+textInput.addEventListener('drop', async (event) => {
     event.preventDefault();
-    textInput.value = await readFile(event.dataTransfer.files[0]);
+    for (let file of event.dataTransfer.files) {
+        if (file.name.endsWith('.pac')) {
+            textInput.value = await readFile(file);
+            break;
+        }
+    }
 });
 
 function readFile(file) {
