@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PAC 脚本压缩工具</title>
+        <link rel="stylesheet" href="/download_with_aria2/chromium/pages/common.css">
+        <style>
+body {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    height: 80vh;
+    justify-content: center;
+    margin: auto;
+    width: 380px;
+}
+
+button {
+    cursor: pointer;
+    font-size: 20px;
+    padding: 5px 30px;
+}
+
+textarea {
+    font-size: 20px;
+    height: 300px;
+    resize: none;
+    width: 600px;
+}
+        </style>
+    </head>
+    <body>
+        <input id="fileInput" type="file" accept=".pac">
+        <textarea id="textInput" placeholder="输入/粘贴代码..."></textarea>
+        <br>
+        <br>
+        <br>
+        <div>
+            <button onclick="minifyFile()">压缩</button>
+            <button onclick="copyFile()">复制</button>
+            <button onclick="downloadFile()">下载</button>
+        </div>
+        <textarea id="output" placeHolder="这里输出结果..." readonly></textarea>
+        <script src="https://cdn.jsdelivr.net/npm/terser/dist/bundle.min.js"></script>
+        <script>
+let lastCode = '';
+let currentCode;
+let minifiedCode;
+let minifiedBlob;
+let minifiedFileName;
+
+const fileInput = document.getElementById('fileInput');
+const textInput = document.getElementById('textInput');
+const output = document.getElementById('output');
+const fileSaver = document.createElement('a');
+
+fileInput.addEventListener('change', async (event) => {
+    textInput.value = await readFile(event.target.files[0]);
+    fileInput.value = '';
+});
+
+textInput.addEventListener('ondragover', (event) => {
+    event.preventDefault();
+});
+
+textInput.addEventListener('ondrop', async (event) => {
+    event.preventDefault();
+    textInput.value = await readFile(event.dataTransfer.files[0]);
+});
+
+function readFile(file) {
+    minifiedFileName = "minified_" + file.name;
+    return new Promise((resolve, reject) => {
+        let reader = new FileReader();
+        reader.onload = () => resolve(currentCode = reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+function minifyFile() {
+    return Terser.minify(textInput.value)
+        .then((result) => {
+            output.textContent = minifiedCode = result.code;
+        })
+        .catch((error) => {
+            alert('压缩失败: ' + error.message);
+        });
+}
+
+async function copyFile() {
+    if (!minifiedCode) {
+        await minifyFile();
+    }
+    if (!minifiedCode) {
+        return alert('复制失败: 没有可供复制的内容');
+    }
+    navigator.clipboard.writeText(minifiedCode)
+        .then(() => alert('已成功复制结果'))
+        .catch(() => alert('复制失败: 没有权限，请检查浏览器设置'));
+}
+
+async function downloadFile() {
+    if (!currentCode) {
+        return alert('下载失败: 没有可供下载的内容');
+    }
+    if (!minifiedCode) {
+        await minifyFile();
+    }
+    if (minifiedCode !== lastCode) {
+        lastCode = minifiedCode;
+        let blob = new Blob([minifiedCode], { type: 'text/plain;charset=utf-8' });
+        URL.revokeObjectURL(minifiedBlob);
+        minifiedBlob = URL.createObjectURL(blob);
+    }
+    fileSaver.href = minifiedBlob;
+    fileSaver.download = minifiedFileName;
+    fileSaver.click();
+}
+        </script>
+    </body>
+</html>
