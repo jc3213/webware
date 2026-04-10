@@ -4,7 +4,7 @@
     - [Aria2 Task Manager](//jc3213.github.io/aria2.js/app)
     - [Messaging Sample - Download with Aria2](//jc3213.github.io/webware/html/test.html)
 - [Easy Proxy](https://github.com/jc3213/easy_proxy)
-    - [matchpattern.js - manage matchpattern for host matching](//jc3213.github.io/matchpattern.js/)
+    - [easyproxy.js - manage matchpattern for host matching](//jc3213.github.io/easyproxy.js/)
 
 ## JavaScript Libraries
 - [promisefilereader.js - Promise based FileReader wrapper](//jc3213.github.io/promisefilereader.js/)
