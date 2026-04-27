@@ -34,9 +34,6 @@ textarea {
 <body>
     <button>Run</button>
     <textarea disabled></textarea>
-    <script src="https://jc3213.github.io/download_with_aria2/inject.js"
-            integrity="sha512-GlG/srJd4raj3P4ZEioaf6lZAeEpgslB0CKYzqsi+WbsWYRBh33Zb9gs1KpmhU5xLKTyMForjgLKR6TQzmRX5Q=="
-            crossorigin="anonymous"></script>
     <script>
 let count = 0;
 const calls = {};
@@ -73,7 +70,7 @@ function startTest() {
 }
 
 function onSuccess(result) {
-    const { name, version } = result.manifest ?? result;
+    const { name, version } = result.system ?? result;
     testResult.value = 'Extension Name: ' + name + '\nVersion: ' + version;
     testBtn.disabled = false;
 }
