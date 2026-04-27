@@ -2,7 +2,7 @@
 - [Download with Aria2](//github.com/jc3213/download_with_aria2)
     - [aria2.js - aria2 JSON-RPC ultility](//github.com/jc3213/aria2.js)
     - [Aria2 Task Manager](//jc3213.github.io/aria2.js/app)
-    - [Messaging Sample - Download with Aria2](//jc3213.github.io/webware/html/test.html)
+    - [Messaging Sample - Download with Aria2](//jc3213.github.io/webware/html/message.html)
 - [Easy Proxy](https://github.com/jc3213/easy_proxy)
     - [easyproxy.js - manage matchpattern for host matching](//jc3213.github.io/easyproxy.js/)
 
