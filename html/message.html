@@ -38,16 +38,42 @@ textarea {
             integrity="sha512-GlG/srJd4raj3P4ZEioaf6lZAeEpgslB0CKYzqsi+WbsWYRBh33Zb9gs1KpmhU5xLKTyMForjgLKR6TQzmRX5Q=="
             crossorigin="anonymous"></script>
     <script>
-let [testBtn, testResult] = document.body.children;
+let count = 0;
+const calls = {};
+
+function messaging(aria2c, params) {
+    return new Promise(function(resolve, reject) {
+        let id = ++count;
+        let timer = setTimeout(function() {
+            delete calls[id];
+            reject( new Error('"Download With Aria2" is either not installed, disabled, or lower than v4.17.0.3548.') );
+        }, 3000);
+        calls[id] = function(result) {
+            clearTimeout(timer);
+            delete calls[id];
+            resolve(result);
+        };
+        window.postMessage({ aria2c, id, params });
+    });
+};
+
+window.addEventListener('message', function(event) {
+    const { aria2c, id, result } = event.data;
+    if (aria2c === 'aria2c_response') {
+        calls[id]?.(result);
+    }
+});
+
+const [testBtn, testResult] = document.body.children;
 
 function startTest() {
     testBtn.disabled = true;
     testResult.value = 'Evaluating if "Download With Aria2" is higher than v4.17.0.3548....';
-    setTimeout(() => aria2c.status().then(onSuccess).catch(onFailure), 1000);
+    setTimeout(() => messaging('aria2c_status').then(onSuccess).catch(onFailure), 1000);
 }
 
 function onSuccess(result) {
-    let { name, version } = result.manifest ?? result;
+    const { name, version } = result.manifest ?? result;
     testResult.value = 'Extension Name: ' + name + '\nVersion: ' + version;
     testBtn.disabled = false;
 }
