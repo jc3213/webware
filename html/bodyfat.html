@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>体脂率计算公式</title>
+        <link rel="stylesheet" href="/download_with_aria2/chromium/pages/common.css">
+        <style>
+body {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    height: 80vh;
+    justify-content: center;
+    margin: auto;
+    text-align: center;
+    width: 800px;
+}
+
+button {
+    cursor: pointer;
+    font-size: 20px;
+    margin: 5px;
+    padding: 5px 20px;
+}
+
+input {
+    width: 70px;
+}
+
+.table {
+    border-width: 1px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    text-align: center;
+}
+
+.table > div {
+    border-width: 1px;
+    padding: 6px;
+}
+
+.table > div[id]::after {
+    content: "%";
+}
+        </style>
+    </head>
+    <body>
+        <h1>输入信息</h1>
+        <div id="input" class="flex">
+            性别
+            <select id="gender">
+                <option value="male">男性</option>
+                <option value="female">女性</option>
+            </select>
+            身高
+            <input id="height">
+            体重
+            <input id="weight">
+            颈围
+            <input id="neck">
+            腰围
+            <input id="waist">
+            <div id="female">
+                臀围
+                <input id="hip">
+            </div>
+        </div>
+        <h1>计算结果</h1>
+        <div id="result" class="table">
+            <div>最小</div>
+            <div>最大</div>
+            <div>您的体脂率</div>
+            <div id="minimum"></div>
+            <div id="maximum"></div>
+            <div id="current">N/A</div>
+        </div>
+        <h3>评价</h4>
+        <div id="comment"></div>
+        <script>
+const inputPane = document.getElementById('input');
+const resultPane = document.getElementById('result');
+const comment = document.getElementById('comment');
+
+const inputEntries = {};
+for (const entry of inputPane.querySelectorAll('[id]')) {
+    inputEntries[entry.id] = entry;
+}
+
+const resultEntries = {};
+for (const entry of resultPane.querySelectorAll('[id]')) {
+    resultEntries[entry.id] = entry;
+}
+
+const bodyfat = {};
+
+inputPane.addEventListener('change', (event) => {
+    const { id, value } = event.target;
+    if (id === 'gender') {
+        inputEntries.hip.disabled = value === 'male';
+    }
+    bodyfat[id] = value;
+    bodyFatFormula();
+});
+
+function bodyFatFormula() {
+    const gender = bodyfat.gender;
+    const height = parseFloat(bodyfat.height);
+    const neck = parseFloat(bodyfat.neck);
+    const waist = parseFloat(bodyfat.waist);
+    const hip = parseFloat(bodyfat.hip);
+
+    if (gender === "male") {
+        bodyfat.bmi = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450;
+    } else {
+        bodyfat.bmi = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(height)) - 450;
+    }
+    resultEntries.current.textContent = bodyfat.bmi.toFixed(2);
+
+    if (bodyfat.bmi < reference[gender].minimum) {
+        comment.textContent = '偏低，可能影响健康';
+    } else if (bodyfat.bmi > reference[gender].maximum) {
+        comment.textContent = '偏高，需要控制饮食和增加运动';
+    } else {
+        comment.textContent = '处于健康范围';
+    }
+}
+
+const reference = {
+    male: { 
+        minimum: 15,
+        maximum: 20,
+        height: 175,
+        weight: 72,
+        neck: 38,
+        waist: 85,
+        hip: 'N/A'
+    },
+    female: { 
+        minimum: 20,
+        maximum: 25,
+        height: 162,
+        weight: 58,
+        neck: 32,
+        waist: 72,
+        hip: 94
+    }
+};
+const genders = ["male", "female"];
+const gender = genders[Math.floor(Math.random() * genders.length)];
+const defaultValue = reference[gender];
+inputEntries.gender.value = bodyfat.gender = gender;
+inputEntries.height.value = bodyfat.height = defaultValue.height;
+inputEntries.weight.value = bodyfat.weight = defaultValue.weight;
+inputEntries.neck.value = bodyfat.neck = defaultValue.neck;
+inputEntries.waist.value = bodyfat.waist = defaultValue.waist;
+inputEntries.hip.value = bodyfat.hip = defaultValue.hip;
+inputEntries.hip.disabled = gender === 'male';
+resultEntries.minimum.textContent = defaultValue.minimum;
+resultEntries.maximum.textContent = defaultValue.maximum;
+        </script>
+    </body>
+</html>
