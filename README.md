@@ -15,3 +15,4 @@
 - [Gacha Simulator](//jc3213.github.io/webware/html/gacha.html)
     - [gacha.js](//jc3213.github.io/webware/js/gacha.js)
 - [PAC Script Minifier](//jc3213.github.io/webware/html/minifier.html)
+- [Body Fat Formula](//jc3213.github.io/webware/html/bodyfat.html)
