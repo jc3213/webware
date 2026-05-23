@@ -29,6 +29,10 @@ input {
     width: 70px;
 }
 
+.flex > * {
+    flex: 1;
+}
+
 .table {
     border-width: 1px;
     display: grid;
@@ -48,22 +52,23 @@ input {
     </head>
     <body>
         <h1>输入信息</h1>
-        <div id="input" class="flex">
-            性别
-            <select id="gender">
-                <option value="male">男性</option>
-                <option value="female">女性</option>
-            </select>
-            身高
-            <input id="height">
-            体重
-            <input id="weight">
-            <br>
-            颈围
-            <input id="neck">
-            腰围
-            <input id="waist">
-            <div id="female">
+        <div id="input">
+            <div class="flex">
+                性别
+                <select id="gender">
+                    <option value="male">男性</option>
+                    <option value="female">女性</option>
+                </select>
+                身高
+                <input id="height">
+                体重
+                <input id="weight">
+            </div>
+            <div class="flex">
+                颈围
+                <input id="neck">
+                腰围
+                <input id="waist">
                 臀围
                 <input id="hip">
             </div>
