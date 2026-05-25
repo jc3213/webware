@@ -15,7 +15,7 @@ body {
     justify-content: center;
     margin: auto;
     text-align: center;
-    width: 480px;
+    width: 680px;
 }
 
 input {
@@ -85,7 +85,7 @@ input {
             <div id="maximum"></div>
             <div id="current">N/A</div>
         </div>
-        <h3>评价</h4>
+        <h3>评价</h3>
         <div id="comment">处于健康范围</div>
         <script>
 const inputPane = document.getElementById('input');
@@ -107,7 +107,11 @@ const bodyfat = {};
 inputPane.addEventListener('change', (event) => {
     const { id, value } = event.target;
     if (id === 'gender') {
+        const defaultValue = reference[value];
         inputEntries.hip.disabled = value === 'male';
+        inputEntries.hip.value = bodyfat.hip = defaultValue.hip;
+        resultEntries.minimum.textContent = defaultValue.minimum;
+        resultEntries.maximum.textContent = defaultValue.maximum;
     }
     bodyfat[id] = value;
     bodyFatFormula();
@@ -118,18 +122,20 @@ function bodyFatFormula() {
     const height = parseFloat(bodyfat.height);
     const neck = parseFloat(bodyfat.neck);
     const waist = parseFloat(bodyfat.waist);
-    const hip = parseFloat(bodyfat.hip);
+    const hip = gender === "female" ? parseFloat(bodyfat.hip) : 0;
+
+    if (isNaN(height) || isNaN(neck) || isNaN(waist)) return;
 
     if (gender === "male") {
-        bodyfat.bmi = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450;
+        bodyfat.percentage = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450;
     } else {
-        bodyfat.bmi = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(height)) - 450;
+        bodyfat.percentage = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(height)) - 450;
     }
-    resultEntries.current.textContent = bodyfat.bmi.toFixed(2);
+    resultEntries.current.textContent = bodyfat.percentage.toFixed(2);
 
-    if (bodyfat.bmi < reference[gender].minimum) {
+    if (bodyfat.percentage < reference[gender].minimum) {
         comment.textContent = '偏低，可能影响健康';
-    } else if (bodyfat.bmi > reference[gender].maximum) {
+    } else if (bodyfat.percentage > reference[gender].maximum) {
         comment.textContent = '偏高，需要控制饮食和增加运动';
     } else {
         comment.textContent = '处于健康范围';
@@ -144,7 +150,7 @@ const reference = {
         weight: 72,
         neck: 38,
         waist: 85,
-        hip: 'N/A'
+        hip: 0
     },
     female: { 
         minimum: 20,
@@ -156,15 +162,16 @@ const reference = {
         hip: 94
     }
 };
-const genders = ["male", "female"];
-const gender = genders[Math.floor(Math.random() * genders.length)];
+
+const gender = ['male', 'female'][Math.floor(Math.random() * 2)];
 const defaultValue = reference[gender];
+
 inputEntries.gender.value = bodyfat.gender = gender;
 inputEntries.height.value = bodyfat.height = defaultValue.height;
 inputEntries.weight.value = bodyfat.weight = defaultValue.weight;
 inputEntries.neck.value = bodyfat.neck = defaultValue.neck;
 inputEntries.waist.value = bodyfat.waist = defaultValue.waist;
-inputEntries.hip.value = bodyfat.hip = defaultValue.hip;
+inputEntries.hip.value = (bodyfat.hip = defaultValue.hip) || 'N/A';
 inputEntries.hip.disabled = gender === 'male';
 resultEntries.minimum.textContent = defaultValue.minimum;
 resultEntries.maximum.textContent = defaultValue.maximum;
