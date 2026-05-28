@@ -38,9 +38,11 @@ textarea {
         <input id="fileInput" type="file" accept=".pac">
         <textarea id="textInput" placeholder="输入/粘贴代码，或拖拽文件到这里..."></textarea>
         <h1>结果</h1>
-        <button onclick="minifyFile()">压缩</button>
-        <button onclick="copyFile()">复制</button>
-        <button onclick="downloadFile()">下载</button>
+        <div class="flex">
+            <button onclick="minifyFile()">压缩</button>
+            <button onclick="copyFile()">复制</button>
+            <button onclick="downloadFile()">下载</button>
+        </div>
         <textarea id="textOutput" placeHolder="这里将输出结果..." readonly></textarea>
         <script src="/promisefilereader.js/filereader.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/terser/dist/bundle.min.js"></script>
