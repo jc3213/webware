@@ -10,30 +10,33 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout aria2 source
+    - name: Checkout aria2
       uses: actions/checkout@v4
       with:
         repository: aria2/aria2
         fetch-depth: 1
 
-    - name: Install dependencies
-      run: |
-        choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-        choco install ninja
-        choco install openssl
+    - name: Install MSYS2 + MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: >-
+          base-devel
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-openssl
+          mingw-w64-x86_64-libssh2
+          mingw-w64-x86_64-c-ares
+          mingw-w64-x86_64-zlib
 
-    - name: Configure CMake
+    - name: Build aria2 (MinGW)
+      shell: msys2 {0}
       run: |
-        cmake -B build -G "Ninja" ^
-          -DOPENSSL_ROOT_DIR="C:/Program Files/OpenSSL" ^
-          -DCMAKE_BUILD_TYPE=Release
+        autoreconf -i
+        ./configure --with-openssl --disable-nls
+        make -j$(nproc)
 
-    - name: Build aria2
-      run: |
-        cmake --build build --config Release
-
-    - name: Upload Windows artifact
+    - name: Upload aria2.exe
       uses: actions/upload-artifact@v4
       with:
         name: aria2-windows
-        path: build/aria2.exe
+        path: src/aria2c.exe
