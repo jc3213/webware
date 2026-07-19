@@ -16,7 +16,7 @@ jobs:
         repository: aria2/aria2
         fetch-depth: 1
 
-    - name: Install MSYS2 + MinGW
+    - name: Setup MSYS2 + MinGW
       uses: msys2/setup-msys2@v2
       with:
         update: true
@@ -28,15 +28,19 @@ jobs:
           mingw-w64-x86_64-c-ares
           mingw-w64-x86_64-zlib
 
-    - name: Build aria2 (MinGW)
+    - name: Build aria2 (mingw-config + make)
       shell: msys2 {0}
       run: |
-        autoreconf -i
-        ./configure --with-openssl --disable-nls
+        ./mingw-config
         make -j$(nproc)
 
-    - name: Upload aria2.exe
+    - name: Package release (mingw-release)
+      shell: msys2 {0}
+      run: |
+        ./mingw-release
+
+    - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
         name: aria2-windows
-        path: src/aria2c.exe
+        path: "*.zip"
