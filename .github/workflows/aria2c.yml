@@ -16,6 +16,10 @@ jobs:
         repository: aria2/aria2
         fetch-depth: 1
 
+    - name: Patch Dockerfile.mingw (replace GMP source)
+      run: |
+        sed -i 's|https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz|https://deb.debian.org/debian/pool/main/g/gmp/gmp_6.3.0.orig.tar.xz|' Dockerfile.mingw
+
     - name: Build Windows binary using Dockerfile.mingw
       run: |
         docker build -f Dockerfile.mingw -t aria2-mingw .
