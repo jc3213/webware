@@ -18,9 +18,10 @@ jobs:
 
     - name: Patch Dockerfile.mingw (replace GMP source + filename)
       run: |
-        sed -i 's|https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz|https://deb.debian.org/debian/pool/main/g/gmp/gmp_6.3.0.orig.tar.xz|' Dockerfile.mingw
-        sed -i 's|tar xf gmp-6.3.0.tar.xz|tar xf gmp_6.3.0.orig.tar.xz|' Dockerfile.mingw
-        sed -i 's|cd gmp-6.3.0|cd gmp-6.3.0.orig|' Dockerfile.mingw
+        sed -i 's|https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz|https://deb.debian.org/debian/pool/main/g/gmp/gmp_6.3.0+dfsg.orig.tar.xz|' Dockerfile.mingw
+        sed -i 's|tar xf gmp-6.3.0.tar.xz|tar xf gmp_6.3.0+dfsg.orig.tar.xz|' Dockerfile.mingw
+        sed -i 's|cd gmp-6.3.0|cd gmp-6.3.0+dfsg|' Dockerfile.mingw
+
 
     - name: Build Windows binary using Dockerfile.mingw
       run: |
