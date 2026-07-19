@@ -1,4 +1,4 @@
-name: build-aria2c-weekly
+name: build-aria2-weekly
 
 on:
   schedule:
@@ -19,12 +19,12 @@ jobs:
     - name: Build Windows binary using Dockerfile.mingw
       run: |
         docker build -f Dockerfile.mingw -t aria2-mingw .
-        container_id=$(docker create aria2-mingw)
-        docker cp $container_id:/aria2/aria2-*-mingw-w64.zip .
-        docker rm $container_id
+        cid=$(docker create aria2-mingw)
+        docker cp "$cid":/aria2/src/aria2c.exe ./aria2c.exe
+        docker rm "$cid"
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
         name: aria2-windows
-        path: "*.zip"
+        path: aria2c.exe
