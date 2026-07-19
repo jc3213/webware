@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows-cross:
+  build-windows-docker:
     runs-on: ubuntu-22.04
 
     steps:
@@ -16,36 +16,12 @@ jobs:
         repository: aria2/aria2
         fetch-depth: 1
 
-    - name: Install cross-compile toolchain + deps
+    - name: Build Windows binary using Dockerfile.mingw
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          mingw-w64 \
-          autoconf automake autotools-dev autopoint libtool \
-          pkg-config \
-          mingw-w64-x86-64-gmp \
-          mingw-w64-x86-64-c-ares \
-          mingw-w64-x86-64-expat \
-          mingw-w64-x86-64-sqlite3 \
-          mingw-w64-x86-64-zlib \
-          mingw-w64-x86-64-libssh2 \
-          mingw-w64-x86-64-cppunit
-
-    - name: Generate configure script
-      run: |
-        autoreconf -i
-
-    - name: Configure for Windows (mingw-config)
-      run: |
-        HOST=x86_64-w64-mingw32 ./mingw-config
-
-    - name: Build aria2 (cross-compile)
-      run: |
-        make -j$(nproc)
-
-    - name: Package release (mingw-release)
-      run: |
-        ./mingw-release
+        docker build -f Dockerfile.mingw -t aria2-mingw .
+        container_id=$(docker create aria2-mingw)
+        docker cp $container_id:/aria2/aria2-*-mingw-w64.zip .
+        docker rm $container_id
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
