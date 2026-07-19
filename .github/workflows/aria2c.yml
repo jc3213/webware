@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-windows-cross:
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout aria2
@@ -16,26 +16,34 @@ jobs:
         repository: aria2/aria2
         fetch-depth: 1
 
-    - name: Setup MSYS2 + MinGW
-      uses: msys2/setup-msys2@v2
-      with:
-        update: true
-        install: >-
-          base-devel
-          mingw-w64-x86_64-toolchain
-          mingw-w64-x86_64-openssl
-          mingw-w64-x86_64-libssh2
-          mingw-w64-x86_64-c-ares
-          mingw-w64-x86_64-zlib
-
-    - name: Build aria2 (mingw-config + make)
-      shell: msys2 {0}
+    - name: Install cross-compile toolchain + deps
       run: |
-        ./mingw-config
+        sudo apt-get update
+        sudo apt-get install -y \
+          mingw-w64 \
+          autoconf automake autotools-dev autopoint libtool \
+          pkg-config \
+          libc-ares-dev \
+          libexpat1-dev \
+          libsqlite3-dev \
+          zlib1g-dev \
+          libssh2-1-dev \
+          libgmp-dev \
+          libcppunit-dev
+
+    - name: Generate configure script
+      run: |
+        autoreconf -i
+
+    - name: Configure for Windows (mingw-config)
+      run: |
+        HOST=x86_64-w64-mingw32 ./mingw-config
+
+    - name: Build aria2 (cross-compile)
+      run: |
         make -j$(nproc)
 
     - name: Package release (mingw-release)
-      shell: msys2 {0}
       run: |
         ./mingw-release
 
