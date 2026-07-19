@@ -23,13 +23,13 @@ jobs:
           mingw-w64 \
           autoconf automake autotools-dev autopoint libtool \
           pkg-config \
-          libc-ares-dev \
-          libexpat1-dev \
-          libsqlite3-dev \
-          zlib1g-dev \
-          libssh2-1-dev \
-          libgmp-dev \
-          libcppunit-dev
+          mingw-w64-x86-64-gmp \
+          mingw-w64-x86-64-c-ares \
+          mingw-w64-x86-64-expat \
+          mingw-w64-x86-64-sqlite3 \
+          mingw-w64-x86-64-zlib \
+          mingw-w64-x86-64-libssh2 \
+          mingw-w64-x86-64-cppunit
 
     - name: Generate configure script
       run: |
